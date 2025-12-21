@@ -2,7 +2,7 @@ return function(chamsTab, ChamsAPI)
 	chamsTab:Toggle({
 		Name = "Bật Chams",
 		Flag = "Chams_BatChams",
-		Default = true,
+		Default = false,
 		Callback = function(value)
 			ChamsAPI:Toggle(value)
 		end
@@ -17,6 +17,25 @@ return function(chamsTab, ChamsAPI)
 			local mode = value == "Từng Bộ Phận"
 			ChamsAPI:UpdateConfig({
 				highlightSpecificParts = mode
+			})
+		end
+	})
+
+	chamsTab:Dropdown({
+		Name = "Bộ Phận Highlight",
+		Flag = "Chams_PartsToHighlight",
+		Items = {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", "Tất Cả"},
+		Default = "Tất Cả",
+		Callback = function(value)
+			local partsMap = {
+				["Head"] = {"Head"},
+				["UpperTorso"] = {"UpperTorso"},
+				["LowerTorso"] = {"LowerTorso"},
+				["HumanoidRootPart"] = {"HumanoidRootPart"},
+				["Tất Cả"] = {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart"}
+			}
+			ChamsAPI:UpdateConfig({
+				partsToHighlight = partsMap[value]
 			})
 		end
 	})
