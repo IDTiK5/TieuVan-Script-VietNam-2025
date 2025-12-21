@@ -24,7 +24,8 @@ type PlayerCache = {
 	[Player]: HighlightData
 }
 
-local ChamsConfig = {
+local ChamsAPI = {
+  Config = {
 	enabled = true,
 	enableErrorRecovery = false,
 	errorRecoveryThreshold = 5,
