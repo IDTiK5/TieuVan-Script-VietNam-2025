@@ -4,7 +4,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_BatChams",
 		Default = false,
 		Callback = function(value)
-			Chams:Toggle(value)
+			ChamsAPI:Toggle(value)
 		end
 	})
 
@@ -15,7 +15,7 @@ return function(chamsTab, ChamsAPI)
 		Default = "Toàn Bộ",
 		Callback = function(value)
 			local mode = value == "Từng Bộ Phận"
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				highlightSpecificParts = mode
 			})
 		end
@@ -34,7 +34,7 @@ return function(chamsTab, ChamsAPI)
 				useVisibilityColors = value == "Nhìn Thấy",
 				healthColorEnabled = value == "Máu"
 			}
-			Chams:UpdateConfig(config)
+			ChamsAPI:UpdateConfig(config)
 		end
 	})
 
@@ -45,7 +45,7 @@ return function(chamsTab, ChamsAPI)
 		Default = "Luôn Trên Cùng",
 		Callback = function(value)
 			local depthMode = value == "Bị Che Khuất" and "Occluded" or "AlwaysOnTop"
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				depthMode = depthMode
 			})
 		end
@@ -56,7 +56,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_MauNen",
 		Color = Color3.fromRGB(0, 255, 140),
 		Callback = function(color)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				fillColor = color,
 				visibleFillColor = color
 			})
@@ -68,7 +68,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_MauVien",
 		Color = Color3.fromRGB(0, 255, 140),
 		Callback = function(color)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				outlineColor = color,
 				visibleOutlineColor = color
 			})
@@ -80,7 +80,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_MauAnNup",
 		Color = Color3.fromRGB(255, 0, 0),
 		Callback = function(color)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				hiddenFillColor = color,
 				hiddenOutlineColor = color
 			})
@@ -92,7 +92,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_MauDongDoi",
 		Color = Color3.fromRGB(0, 150, 255),
 		Callback = function(color)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				teammateFillColor = color,
 				teammateOutlineColor = color
 			})
@@ -104,7 +104,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_GradientMau1",
 		Color = Color3.fromRGB(255, 0, 0),
 		Callback = function(color)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				gradientColor1 = color
 			})
 		end
@@ -115,7 +115,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_GradientMau2",
 		Color = Color3.fromRGB(0, 0, 255),
 		Callback = function(color)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				gradientColor2 = color
 			})
 		end
@@ -126,7 +126,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_MauMaxDay",
 		Color = Color3.fromRGB(0, 255, 0),
 		Callback = function(color)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				healthFullColor = color
 			})
 		end
@@ -137,7 +137,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_MauThap",
 		Color = Color3.fromRGB(255, 0, 0),
 		Callback = function(color)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				healthLowColor = color
 			})
 		end
@@ -150,7 +150,7 @@ return function(chamsTab, ChamsAPI)
 		Max = 50000,
 		Default = 10000,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				maxDistance = value
 			})
 		end
@@ -163,7 +163,7 @@ return function(chamsTab, ChamsAPI)
 		Max = 1,
 		Default = 0.5,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				fillTransparency = value
 			})
 		end
@@ -176,7 +176,7 @@ return function(chamsTab, ChamsAPI)
 		Max = 1,
 		Default = 0,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				outlineTransparency = value
 			})
 		end
@@ -189,7 +189,7 @@ return function(chamsTab, ChamsAPI)
 		Max = 20,
 		Default = 5,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				batchSize = value
 			})
 		end
@@ -202,7 +202,7 @@ return function(chamsTab, ChamsAPI)
 		Max = 5,
 		Default = 1,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				rainbowSpeed = value
 			})
 		end
@@ -215,7 +215,7 @@ return function(chamsTab, ChamsAPI)
 		Max = 5,
 		Default = 2,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				pulseSpeed = value
 			})
 		end
@@ -228,7 +228,7 @@ return function(chamsTab, ChamsAPI)
 		Max = 5,
 		Default = 1,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				gradientSpeed = value
 			})
 		end
@@ -241,7 +241,7 @@ return function(chamsTab, ChamsAPI)
 		Max = 5000,
 		Default = 500,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				fadeStartDistance = value
 			})
 		end
@@ -254,7 +254,7 @@ return function(chamsTab, ChamsAPI)
 		Max = 5000,
 		Default = 2000,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				fadeEndDistance = value
 			})
 		end
@@ -267,7 +267,7 @@ return function(chamsTab, ChamsAPI)
 		Max = 3,
 		Default = 1.5,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				glowIntensityMultiplier = value
 			})
 		end
@@ -278,7 +278,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_CauVong",
 		Default = false,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				rainbowEnabled = value
 			})
 		end
@@ -289,7 +289,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_Dap",
 		Default = false,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				pulseEnabled = value
 			})
 		end
@@ -300,7 +300,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_ChuyenMau",
 		Default = false,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				gradientEnabled = value
 			})
 		end
@@ -311,7 +311,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_NhinThay",
 		Default = false,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				useVisibilityColors = value
 			})
 		end
@@ -322,7 +322,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_MauTheoMau",
 		Default = false,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				healthColorEnabled = value
 			})
 		end
@@ -333,7 +333,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_MoDan",
 		Default = false,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				distanceFadeEnabled = value
 			})
 		end
@@ -344,7 +344,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_ChiVien",
 		Default = false,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				outlineOnly = value
 			})
 		end
@@ -355,7 +355,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_LocDongDoi",
 		Default = false,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				useTeamFilter = value
 			})
 		end
@@ -366,7 +366,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_HienDongDoi",
 		Default = false,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				showTeammates = value
 			})
 		end
@@ -377,7 +377,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_Raycast",
 		Default = false,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				useRaycasting = value
 			})
 		end
@@ -388,7 +388,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_MoKhiChe",
 		Default = false,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				fadeWhenBlocked = value
 			})
 		end
@@ -399,7 +399,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_Glow",
 		Default = false,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				visibilityGlowEnabled = value
 			})
 		end
@@ -410,7 +410,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_PhucHoi",
 		Default = true,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				enableErrorRecovery = value
 			})
 		end
@@ -421,7 +421,7 @@ return function(chamsTab, ChamsAPI)
 		Flag = "Chams_Debug",
 		Default = false,
 		Callback = function(value)
-			Chams:UpdateConfig({
+			ChamsAPI:UpdateConfig({
 				debugMode = value
 			})
 		end
@@ -430,21 +430,21 @@ return function(chamsTab, ChamsAPI)
 	chamsTab:Button({
 		Name = "Làm Mới",
 		Callback = function()
-			Chams:ForceUpdateAll()
+			ChamsAPI:ForceUpdateAll()
 		end
 	})
 
 	chamsTab:Button({
 		Name = "Phục Hồi Lỗi",
 		Callback = function()
-			Chams:ForceRecovery()
+			ChamsAPI:ForceRecovery()
 		end
 	})
 
 	chamsTab:Button({
 		Name = "Đặt Lại Lỗi",
 		Callback = function()
-			Chams:ResetErrorTracking()
+			ChamsAPI:ResetErrorTracking()
 		end
 	})
 end
