@@ -25,7 +25,7 @@ return function(chamsTab, ChamsAPI)
 		Name = "Bộ Phận Highlight",
 		Flag = "Chams_PartsToHighlight",
 		Items = {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", "Tất Cả"},
-		Default = "Tất Cả",
+		Default = "Head",
 		Callback = function(value)
 			local partsMap = {
 				["Head"] = {"Head"},
@@ -488,7 +488,7 @@ return function(chamsTab, ChamsAPI)
 	chamsTab:Toggle({
 		Name = "Tự Phục Hồi Lỗi",
 		Flag = "Chams_PhucHoi",
-		Default = false,
+		Default = true,
 		Callback = function(value)
 			ChamsAPI:UpdateConfig({
 				enableErrorRecovery = value
