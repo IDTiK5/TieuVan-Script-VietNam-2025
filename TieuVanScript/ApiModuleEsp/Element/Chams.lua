@@ -1,4 +1,4 @@
-return function(chamsTab, ChamsApi)
+return function(chamsTab, ChamsAPI)
 	chamsTab:Toggle({
 		Name = "Bật Chams",
 		Flag = "Chams_BatChams",
