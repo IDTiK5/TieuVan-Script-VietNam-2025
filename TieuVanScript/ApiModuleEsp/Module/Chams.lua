@@ -25,7 +25,7 @@ type PlayerCache = {
 }
 
 local ChamsConfig = {
-	enabled = true,
+	enabled = false,
 	enableErrorRecovery = false,
 	errorRecoveryThreshold = 5,
 	errorRecoveryCooldown = 3,
