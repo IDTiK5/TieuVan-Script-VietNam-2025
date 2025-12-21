@@ -198,7 +198,7 @@ return function(chamsTab, ChamsAPI)
 	chamsTab:Slider({
 		Name = "Tốc Độ Cầu Vồng",
 		Flag = "Chams_TocDoCauVong",
-		Min = 0.5,
+		Min = 0.1,
 		Max = 5,
 		Default = 1,
 		Callback = function(value)
@@ -209,10 +209,36 @@ return function(chamsTab, ChamsAPI)
 	})
 
 	chamsTab:Slider({
+		Name = "Bão Hòa Cầu Vồng",
+		Flag = "Chams_RainbowSat",
+		Min = 0,
+		Max = 1,
+		Default = 1,
+		Callback = function(value)
+			ChamsAPI:UpdateConfig({
+				rainbowSaturation = value
+			})
+		end
+	})
+
+	chamsTab:Slider({
+		Name = "Độ Sáng Cầu Vồng",
+		Flag = "Chams_RainbowVal",
+		Min = 0,
+		Max = 1,
+		Default = 1,
+		Callback = function(value)
+			ChamsAPI:UpdateConfig({
+				rainbowValue = value
+			})
+		end
+	})
+
+	chamsTab:Slider({
 		Name = "Tốc Độ Đập",
 		Flag = "Chams_TocDoDap",
-		Min = 0.5,
-		Max = 5,
+		Min = 0.1,
+		Max = 10,
 		Default = 2,
 		Callback = function(value)
 			ChamsAPI:UpdateConfig({
@@ -222,9 +248,35 @@ return function(chamsTab, ChamsAPI)
 	})
 
 	chamsTab:Slider({
+		Name = "Min Đập",
+		Flag = "Chams_PulseMin",
+		Min = 0,
+		Max = 1,
+		Default = 0.6,
+		Callback = function(value)
+			ChamsAPI:UpdateConfig({
+				pulseMinMultiplier = value
+			})
+		end
+	})
+
+	chamsTab:Slider({
+		Name = "Max Đập",
+		Flag = "Chams_PulseMax",
+		Min = 0.5,
+		Max = 2,
+		Default = 1.4,
+		Callback = function(value)
+			ChamsAPI:UpdateConfig({
+				pulseMaxMultiplier = value
+			})
+		end
+	})
+
+	chamsTab:Slider({
 		Name = "Tốc Độ Chuyển Màu",
 		Flag = "Chams_TocDoChuyenMau",
-		Min = 0.5,
+		Min = 0.1,
 		Max = 5,
 		Default = 1,
 		Callback = function(value)
@@ -273,79 +325,15 @@ return function(chamsTab, ChamsAPI)
 		end
 	})
 
-	chamsTab:Toggle({
-		Name = "Cầu Vồng",
-		Flag = "Chams_CauVong",
-		Default = false,
+	chamsTab:Slider({
+		Name = "Độ Dài Góc",
+		Flag = "Chams_CornerLen",
+		Min = 0.1,
+		Max = 1,
+		Default = 0.25,
 		Callback = function(value)
-			ChamsAPI:UpdateConfig({
-				rainbowEnabled = value
-			})
-		end
-	})
-
-	chamsTab:Toggle({
-		Name = "Đập",
-		Flag = "Chams_Dap",
-		Default = false,
-		Callback = function(value)
-			ChamsAPI:UpdateConfig({
-				pulseEnabled = value
-			})
-		end
-	})
-
-	chamsTab:Toggle({
-		Name = "Chuyển Màu",
-		Flag = "Chams_ChuyenMau",
-		Default = false,
-		Callback = function(value)
-			ChamsAPI:UpdateConfig({
-				gradientEnabled = value
-			})
-		end
-	})
-
-	chamsTab:Toggle({
-		Name = "Theo Nhìn Thấy",
-		Flag = "Chams_NhinThay",
-		Default = false,
-		Callback = function(value)
-			ChamsAPI:UpdateConfig({
-				useVisibilityColors = value
-			})
-		end
-	})
-
-	chamsTab:Toggle({
-		Name = "Màu Theo Máu",
-		Flag = "Chams_MauTheoMau",
-		Default = false,
-		Callback = function(value)
-			ChamsAPI:UpdateConfig({
-				healthColorEnabled = value
-			})
-		end
-	})
-
-	chamsTab:Toggle({
-		Name = "Mờ Dần",
-		Flag = "Chams_MoDan",
-		Default = false,
-		Callback = function(value)
-			ChamsAPI:UpdateConfig({
-				distanceFadeEnabled = value
-			})
-		end
-	})
-
-	chamsTab:Toggle({
-		Name = "Chỉ Viền",
-		Flag = "Chams_ChiVien",
-		Default = false,
-		Callback = function(value)
-			ChamsAPI:UpdateConfig({
-				outlineOnly = value
+			ChamsTab:UpdateConfig({
+				cornerLength = value
 			})
 		end
 	})
@@ -395,6 +383,28 @@ return function(chamsTab, ChamsAPI)
 	})
 
 	chamsTab:Toggle({
+		Name = "Mờ Dần",
+		Flag = "Chams_MoDan",
+		Default = false,
+		Callback = function(value)
+			ChamsAPI:UpdateConfig({
+				distanceFadeEnabled = value
+			})
+		end
+	})
+
+	chamsTab:Toggle({
+		Name = "Chỉ Viền",
+		Flag = "Chams_ChiVien",
+		Default = false,
+		Callback = function(value)
+			ChamsAPI:UpdateConfig({
+				outlineOnly = value
+			})
+		end
+	})
+
+	chamsTab:Toggle({
 		Name = "Sáng",
 		Flag = "Chams_Glow",
 		Default = false,
@@ -408,7 +418,7 @@ return function(chamsTab, ChamsAPI)
 	chamsTab:Toggle({
 		Name = "Tự Phục Hồi Lỗi",
 		Flag = "Chams_PhucHoi",
-		Default = true,
+		Default = false,
 		Callback = function(value)
 			ChamsAPI:UpdateConfig({
 				enableErrorRecovery = value
@@ -423,6 +433,58 @@ return function(chamsTab, ChamsAPI)
 		Callback = function(value)
 			ChamsAPI:UpdateConfig({
 				debugMode = value
+			})
+		end
+	})
+
+	chamsTab:Slider({
+		Name = "Ngưỡng Phục Hồi Lỗi",
+		Flag = "Chams_ErrorThreshold",
+		Min = 1,
+		Max = 20,
+		Default = 5,
+		Callback = function(value)
+			ChamsAPI:UpdateConfig({
+				errorRecoveryThreshold = value
+			})
+		end
+	})
+
+	chamsTab:Slider({
+		Name = "Cooldown Phục Hồi",
+		Flag = "Chams_ErrorCooldown",
+		Min = 1,
+		Max = 10,
+		Default = 3,
+		Callback = function(value)
+			ChamsAPI:UpdateConfig({
+				errorRecoveryCooldown = value
+			})
+		end
+	})
+
+	chamsTab:Slider({
+		Name = "Max Lỗi Liên Tiếp",
+		Flag = "Chams_MaxErrors",
+		Min = 1,
+		Max = 50,
+		Default = 10,
+		Callback = function(value)
+			ChamsAPI:UpdateConfig({
+				maxConsecutiveErrors = value
+			})
+		end
+	})
+
+	chamsTab:Slider({
+		Name = "Khoảng Cập Nhật",
+		Flag = "Chams_UpdateInterval",
+		Min = 0.01,
+		Max = 0.5,
+		Default = 0.05,
+		Callback = function(value)
+			ChamsAPI:UpdateConfig({
+				updateInterval = value
 			})
 		end
 	})
