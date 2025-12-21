@@ -1,4 +1,4 @@
-return function(boxTab, ESP)
+return function(boxTab, BoxApi)
 	boxTab:Toggle({
 		Name = "Bật ESP",
 		Flag = "ESP_Enabled",
