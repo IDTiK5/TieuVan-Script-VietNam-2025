@@ -1,4 +1,4 @@
-return function(boxTab, HealthBar)
+return function(boxTab, HealthAPI)
 	boxTab:Toggle({
 		Name = "Bật Health Bar",
 		Flag = "HealthBar_Enabled",
