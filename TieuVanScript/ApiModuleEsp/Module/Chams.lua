@@ -32,7 +32,7 @@ type PlayerCache = {[Player]: HighlightData}
 -- Configuration centralized - tất cả settings ở đây
 local Config = {
 	-- Core settings
-	enabled = true,                           -- Bật/tắt chams
+	enabled = false,                           -- Bật/tắt chams
 	maxDistance = 10000,                      -- Khoảng cách tối đa hiển thị
 	updateInterval = 0.05,                    -- Thời gian giữa các lần update (50ms)
 	batchSize = 5,                            -- Số players xử lý mỗi frame
