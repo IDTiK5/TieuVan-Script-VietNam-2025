@@ -39,7 +39,7 @@ if not LocalPlayer then
     LocalPlayer = Players.LocalPlayer
 end
 
--- ===== DRAWING API =====
+-- ===== DRAWING HealthAPI =====
 local DrawingNew = Drawing.new
 
 -- ===== CONFIGURATION CENTRALIZED =====
@@ -873,16 +873,16 @@ end
 
 --[[
 ================================================================================
-                            PHẦN 9: PUBLIC API
+                            PHẦN 9: PUBLIC HealthAPI
 ================================================================================
 --]]
 
-local API = {}
+local HealthAPI = {}
 
 -- ===== TOGGLE =====
 -- Bật/tắt ESP
 -- @param state: true/false
-function API:Toggle(state)
+function HealthAPI:Toggle(state)
     Configuration.enabled = state
     
     -- Hide tất cả nếu disable
@@ -899,7 +899,7 @@ end
 -- Cập nhật configuration
 -- @param newConfig: Table chứa config mới (merge với existing)
 -- @return: true nếu thành công
-function API:UpdateConfig(newConfig)
+function HealthAPI:UpdateConfig(newConfig)
     -- Validate input
     if not newConfig or Type(newConfig) ~= "table" then
         return false
@@ -948,14 +948,14 @@ end
 -- ===== GET CONFIG =====
 -- Lấy configuration hiện tại
 -- @return: Table configuration
-function API:GetConfig()
+function HealthAPI:GetConfig()
     return Configuration
 end
 
 -- ===== GET ENABLED =====
 -- Kiểm tra trạng thái enabled
 -- @return: true/false
-function API:GetEnabled()
+function HealthAPI:GetEnabled()
     return Configuration.enabled
 end
 
@@ -963,20 +963,20 @@ end
 
 -- Thêm player vào whitelist
 -- @param name: Tên player
-function API:AddToWhitelist(name)
+function HealthAPI:AddToWhitelist(name)
     Configuration.whitelist[name] = true
     DebugLog("Added to whitelist: " .. name)
 end
 
 -- Xóa player khỏi whitelist
 -- @param name: Tên player
-function API:RemoveFromWhitelist(name)
+function HealthAPI:RemoveFromWhitelist(name)
     Configuration.whitelist[name] = nil
     DebugLog("Removed from whitelist: " .. name)
 end
 
 -- Xóa toàn bộ whitelist
-function API:ClearWhitelist()
+function HealthAPI:ClearWhitelist()
     Configuration.whitelist = {}
     DebugLog("Whitelist cleared")
 end
@@ -985,27 +985,27 @@ end
 
 -- Thêm player vào blacklist
 -- @param name: Tên player
-function API:AddToBlacklist(name)
+function HealthAPI:AddToBlacklist(name)
     Configuration.blacklist[name] = true
     DebugLog("Added to blacklist: " .. name)
 end
 
 -- Xóa player khỏi blacklist
 -- @param name: Tên player
-function API:RemoveFromBlacklist(name)
+function HealthAPI:RemoveFromBlacklist(name)
     Configuration.blacklist[name] = nil
     DebugLog("Removed from blacklist: " .. name)
 end
 
 -- Xóa toàn bộ blacklist
-function API:ClearBlacklist()
+function HealthAPI:ClearBlacklist()
     Configuration.blacklist = {}
     DebugLog("Blacklist cleared")
 end
 
 -- ===== DESTROY =====
 -- Cleanup hoàn toàn hệ thống ESP
-function API:Destroy()
+function HealthAPI:Destroy()
     -- Disconnect tất cả connections
     DisconnectAll()
     
@@ -1023,7 +1023,7 @@ end
 
 -- ===== REFRESH =====
 -- Refresh lại toàn bộ ESP (recreate all)
-function API:Refresh()
+function HealthAPI:Refresh()
     -- Remove tất cả ESP hiện tại
     for player, _ in Pairs(State.espData) do
         RemovePlayerESP(player)
@@ -1037,7 +1037,7 @@ end
 
 -- ===== RESET ERRORS =====
 -- Reset error count (cho phép ESP hoạt động lại sau khi bị disable do lỗi)
-function API:ResetErrors()
+function HealthAPI:ResetErrors()
     State.errorCount = 0
     State.lastErrorTime = 0
     Configuration.enabled = true
@@ -1048,7 +1048,7 @@ end
 -- ===== GET STATE =====
 -- Lấy state hiện tại (debug purpose)
 -- @return: Table state
-function API:GetState()
+function HealthAPI:GetState()
     return {
         playerCount = 0, -- Sẽ tính bên dưới
         errorCount = State.errorCount,
@@ -1086,5 +1086,5 @@ end
 -- Run initialization
 Initialize()
 
--- Return API
-return API
+-- Return HealthAPI
+return HealthAPI
