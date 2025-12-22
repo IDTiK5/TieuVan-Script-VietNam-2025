@@ -1,14 +1,14 @@
-return function(boxTab, HealthAPI)
-	boxTab:Toggle({
+return function(healthTab, HealthAPI)
+	healthTab:Toggle({
 		Name = "Bật Health Bar",
 		Flag = "HealthBar_Enabled",
-		Default = false,
+		Default = true,
 		Callback = function(value)
 			HealthBar:Toggle(value)
 		end
 	})
 
-	boxTab:Dropdown({
+	healthTab:Dropdown({
 		Name = "Kiểu Health Bar",
 		Flag = "BarStyle",
 		Items = {"Ngang", "Dọc"},
@@ -22,7 +22,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Dropdown({
+	healthTab:Dropdown({
 		Name = "Chế độ màu",
 		Flag = "ColorMode",
 		Items = {"Tĩnh", "Gradient", "Cầu vồng"},
@@ -38,7 +38,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:ColorPicker({
+	healthTab:ColorPicker({
 		Name = "Màu máu cao",
 		Flag = "HealthHigh",
 		Color = Color3.fromRGB(0, 255, 0),
@@ -47,7 +47,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:ColorPicker({
+	healthTab:ColorPicker({
 		Name = "Màu máu trung bình",
 		Flag = "HealthMid",
 		Color = Color3.fromRGB(255, 255, 0),
@@ -56,7 +56,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:ColorPicker({
+	healthTab:ColorPicker({
 		Name = "Màu máu thấp",
 		Flag = "HealthLow",
 		Color = Color3.fromRGB(255, 0, 0),
@@ -65,7 +65,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:ColorPicker({
+	healthTab:ColorPicker({
 		Name = "Màu static",
 		Flag = "ColorStatic",
 		Color = Color3.fromRGB(0, 255, 0),
@@ -74,7 +74,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:ColorPicker({
+	healthTab:ColorPicker({
 		Name = "Màu nền",
 		Flag = "BackgroundColor",
 		Color = Color3.fromRGB(40, 40, 40),
@@ -83,7 +83,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:ColorPicker({
+	healthTab:ColorPicker({
 		Name = "Màu viền",
 		Flag = "OutlineColor",
 		Color = Color3.fromRGB(0, 0, 0),
@@ -92,7 +92,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Slider({
+	healthTab:Slider({
 		Name = "Chiều rộng (Ngang)",
 		Flag = "BarWidth",
 		Min = 20,
@@ -103,7 +103,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Slider({
+	healthTab:Slider({
 		Name = "Chiều cao (Ngang)",
 		Flag = "BarHeight",
 		Min = 1,
@@ -114,7 +114,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Slider({
+	healthTab:Slider({
 		Name = "Offset Y (Ngang)",
 		Flag = "BarOffsetY",
 		Min = -50,
@@ -125,7 +125,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Slider({
+	healthTab:Slider({
 		Name = "Chiều rộng (Dọc)",
 		Flag = "VerticalWidth",
 		Min = 1,
@@ -136,7 +136,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Slider({
+	healthTab:Slider({
 		Name = "Chiều cao (Dọc)",
 		Flag = "VerticalHeight",
 		Min = 20,
@@ -147,7 +147,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Slider({
+	healthTab:Slider({
 		Name = "Offset X (Dọc)",
 		Flag = "VerticalOffsetX",
 		Min = -50,
@@ -158,7 +158,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Slider({
+	healthTab:Slider({
 		Name = "Độ dày viền",
 		Flag = "OutlineSize",
 		Min = 0.5,
@@ -169,7 +169,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Slider({
+	healthTab:Slider({
 		Name = "Tốc độ lerp",
 		Flag = "LerpSpeed",
 		Min = 0.01,
@@ -180,7 +180,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Toggle({
+	healthTab:Toggle({
 		Name = "Fade In/Out",
 		Flag = "FadeInOut",
 		Default = false,
@@ -189,7 +189,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Slider({
+	healthTab:Slider({
 		Name = "Tốc độ fade",
 		Flag = "FadeSpeed",
 		Min = 0.01,
@@ -200,7 +200,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Toggle({
+	healthTab:Toggle({
 		Name = "Hiển thị text máu",
 		Flag = "ShowHealthText",
 		Default = false,
@@ -209,7 +209,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Dropdown({
+	healthTab:Dropdown({
 		Name = "Kiểu text máu",
 		Flag = "TextMode",
 		Items = {"Phần trăm", "Giá trị", "Cả hai"},
@@ -225,7 +225,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Dropdown({
+	healthTab:Dropdown({
 		Name = "Vị trí text",
 		Flag = "TextPosition",
 		Items = {"Trên", "Dưới", "Trái", "Phải", "Giữa"},
@@ -236,7 +236,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Slider({
+	healthTab:Slider({
 		Name = "Kích thước text",
 		Flag = "TextSize",
 		Min = 8,
@@ -247,7 +247,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:ColorPicker({
+	healthTab:ColorPicker({
 		Name = "Màu text",
 		Flag = "TextColor",
 		Color = Color3.fromRGB(255, 255, 255),
@@ -256,7 +256,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Toggle({
+	healthTab:Toggle({
 		Name = "Outline text",
 		Flag = "TextOutline",
 		Default = true,
@@ -265,7 +265,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:ColorPicker({
+	healthTab:ColorPicker({
 		Name = "Màu outline text",
 		Flag = "TextOutlineColor",
 		Color = Color3.fromRGB(0, 0, 0),
@@ -274,7 +274,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Slider({
+	healthTab:Slider({
 		Name = "Offset X text",
 		Flag = "TextOffsetX",
 		Min = -50,
@@ -285,7 +285,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Slider({
+	healthTab:Slider({
 		Name = "Offset Y text",
 		Flag = "TextOffsetY",
 		Min = -50,
@@ -296,7 +296,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Toggle({
+	healthTab:Toggle({
 		Name = "Lọc đội",
 		Flag = "TeamFilter",
 		Default = false,
@@ -305,7 +305,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Dropdown({
+	healthTab:Dropdown({
 		Name = "Chế độ lọc đội",
 		Flag = "TeamFilterMode",
 		Items = {"Standard", "Attribute"},
@@ -319,7 +319,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Slider({
+	healthTab:Slider({
 		Name = "Khoảng cách tối đa",
 		Flag = "MaxDistance",
 		Min = 100,
@@ -330,7 +330,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Toggle({
+	healthTab:Toggle({
 		Name = "Khôi phục lỗi tự động",
 		Flag = "ErrorRecovery",
 		Default = true,
@@ -339,7 +339,7 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Toggle({
+	healthTab:Toggle({
 		Name = "Chế độ gỡ lỗi",
 		Flag = "DebugMode",
 		Default = false,
@@ -348,14 +348,14 @@ return function(boxTab, HealthAPI)
 		end
 	})
 
-	boxTab:Button({
+	healthTab:Button({
 		Name = "Làm mới Health Bar",
 		Callback = function()
 			HealthBar:Refresh()
 		end
 	})
 
-	boxTab:Button({
+	healthTab:Button({
 		Name = "Reset lỗi",
 		Callback = function()
 			HealthBar:ResetErrors()
