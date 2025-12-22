@@ -873,218 +873,137 @@ end
 
 --[[
 ================================================================================
-                            PHẦN 9: PUBLIC HealthAPI
+                            PHẦN: PUBLIC API
 ================================================================================
---]]
+]]
 
 local HealthAPI = {}
 
--- ===== TOGGLE =====
--- Bật/tắt ESP
--- @param state: true/false
+-- Bật/tắt HealthBar System
 function HealthAPI:Toggle(state)
     Configuration.enabled = state
     
-    -- Hide tất cả nếu disable
     if not state then
-        for _, data in Pairs(State.espData) do
+        -- Disable: ẩn tất cả drawings
+        for _, data in pairs(State.espData) do
             HideAllDrawings(data)
+        end
+    else
+        -- Enable: refresh lại trạng thái
+        for player, data in pairs(State.espData) do
+            data.targetOpacity = 1
         end
     end
     
-    DebugLog("ESP toggled: " .. Tostring(state))
+    DebugLog("HealthBar " .. (state and "enabled" or "disabled"))
 end
 
--- ===== UPDATE CONFIG =====
--- Cập nhật configuration
--- @param newConfig: Table chứa config mới (merge với existing)
--- @return: true nếu thành công
+-- Update config (Hỗ trợ merge partial config)
 function HealthAPI:UpdateConfig(newConfig)
     -- Validate input
-    if not newConfig or Type(newConfig) ~= "table" then
-        return false
-    end
+    if type(newConfig) ~= "table" then return end
     
     -- Merge config
-    for key, value in Pairs(newConfig) do
-        -- Chỉ update nếu key tồn tại trong config gốc
+    for key, value in pairs(newConfig) do
         if Configuration[key] ~= nil then
-            -- Validate barStyle
-            if key == "barStyle" then
-                if value == "horizontal" or value == "vertical" then
-                    Configuration[key] = value
-                end
-            -- Validate barColorMode
-            elseif key == "barColorMode" then
-                if value == "static" or value == "gradient" or value == "rainbow" then
-                    Configuration[key] = value
-                end
-            -- Validate textPosition
-            elseif key == "textPosition" then
-                if value == "top" or value == "bottom" or value == "left" or value == "right" or value == "center" then
-                    Configuration[key] = value
-                end
-            -- Validate textMode
-            elseif key == "textMode" then
-                if value == "percent" or value == "value" or value == "both" then
-                    Configuration[key] = value
-                end
-            -- Validate teamFilterMode
-            elseif key == "teamFilterMode" then
-                if value == "standard" or value == "attribute" then
-                    Configuration[key] = value
-                end
-            else
-                -- Other configs: direct assign
-                Configuration[key] = value
+            -- Validate các giá trị enum đặc biệt nếu cần
+            if key == "barStyle" and not (value == "horizontal" or value == "vertical" or value == "circle") then
+                continue 
             end
+            Configuration[key] = value
         end
     end
     
     DebugLog("Configuration updated")
-    return true
+    
+    -- Force refresh nếu thay đổi style để tránh lỗi visual
+    if newConfig.barStyle or newConfig.barWidth or newConfig.barHeight then
+        HealthAPI:Refresh()
+    end
 end
 
--- ===== GET CONFIG =====
--- Lấy configuration hiện tại
--- @return: Table configuration
+-- Lấy config hiện tại
 function HealthAPI:GetConfig()
     return Configuration
 end
 
--- ===== GET ENABLED =====
--- Kiểm tra trạng thái enabled
--- @return: true/false
-function HealthAPI:GetEnabled()
-    return Configuration.enabled
+-- Lấy runtime stats (Thống kê hiệu năng)
+function HealthAPI:GetRuntimeStats()
+    local playerCount = 0
+    for _ in pairs(State.espData) do playerCount = playerCount + 1 end
+
+    return {
+        activePlayers = playerCount,
+        isInitialized = State.isInitialized,
+        rainbowHue = State.rainbowHue,
+        renderActive = State.renderConnection ~= nil
+    }
 end
 
--- ===== WHITELIST FUNCTIONS =====
-
--- Thêm player vào whitelist
--- @param name: Tên player
-function HealthAPI:AddToWhitelist(name)
-    Configuration.whitelist[name] = true
-    DebugLog("Added to whitelist: " .. name)
+-- Lấy error stats (Thống kê lỗi)
+function HealthAPI:GetErrorStats()
+    return {
+        errorCount = State.errorCount,
+        lastErrorTime = State.lastErrorTime,
+        isEnabled = Configuration.enabled
+    }
 end
 
--- Xóa player khỏi whitelist
--- @param name: Tên player
-function HealthAPI:RemoveFromWhitelist(name)
-    Configuration.whitelist[name] = nil
-    DebugLog("Removed from whitelist: " .. name)
+-- Reset error tracking (Khôi phục sau khi bị auto-disable)
+function HealthAPI:ResetErrorTracking()
+    State.errorCount = 0
+    State.lastErrorTime = 0
+    Configuration.enabled = true
+    DebugLog("Error tracking reset")
 end
 
--- Xóa toàn bộ whitelist
-function HealthAPI:ClearWhitelist()
-    Configuration.whitelist = {}
-    DebugLog("Whitelist cleared")
-end
-
--- ===== BLACKLIST FUNCTIONS =====
-
--- Thêm player vào blacklist
--- @param name: Tên player
-function HealthAPI:AddToBlacklist(name)
-    Configuration.blacklist[name] = true
-    DebugLog("Added to blacklist: " .. name)
-end
-
--- Xóa player khỏi blacklist
--- @param name: Tên player
-function HealthAPI:RemoveFromBlacklist(name)
-    Configuration.blacklist[name] = nil
-    DebugLog("Removed from blacklist: " .. name)
-end
-
--- Xóa toàn bộ blacklist
-function HealthAPI:ClearBlacklist()
-    Configuration.blacklist = {}
-    DebugLog("Blacklist cleared")
-end
-
--- ===== DESTROY =====
--- Cleanup hoàn toàn hệ thống ESP
-function HealthAPI:Destroy()
-    -- Disconnect tất cả connections
-    DisconnectAll()
-    
-    -- Remove tất cả ESP drawings
-    for player, _ in Pairs(State.espData) do
-        RemovePlayerESP(player)
-    end
-    
-    -- Clear state
-    State.espData = {}
-    State.isInitialized = false
-    
-    Print("[HealthBar ESP] Destroyed successfully")
-end
-
--- ===== REFRESH =====
--- Refresh lại toàn bộ ESP (recreate all)
-function HealthAPI:Refresh()
+-- Force refresh toàn bộ (Xóa và tạo lại tất cả drawings)
+function HealthAPI:ForceUpdateAll()
     -- Remove tất cả ESP hiện tại
-    for player, _ in Pairs(State.espData) do
+    for player, _ in pairs(State.espData) do
         RemovePlayerESP(player)
     end
     
     -- Recreate cho tất cả players
-    InitializeExistingPlayers()
-    
-    DebugLog("ESP refreshed")
-end
-
--- ===== RESET ERRORS =====
--- Reset error count (cho phép ESP hoạt động lại sau khi bị disable do lỗi)
-function HealthAPI:ResetErrors()
-    State.errorCount = 0
-    State.lastErrorTime = 0
-    Configuration.enabled = true
-    
-    DebugLog("Errors reset, ESP re-enabled")
-end
-
--- ===== GET STATE =====
--- Lấy state hiện tại (debug purpose)
--- @return: Table state
-function HealthAPI:GetState()
-    return {
-        playerCount = 0, -- Sẽ tính bên dưới
-        errorCount = State.errorCount,
-        isInitialized = State.isInitialized,
-        rainbowHue = State.rainbowHue
-    }
-end
-
---[[
-================================================================================
-                            PHẦN 10: INITIALIZATION
-================================================================================
---]]
-
--- ===== MAIN INITIALIZATION =====
-local function Initialize()
-    -- Tránh initialize 2 lần
-    if State.isInitialized then
-        DebugLog("Already initialized, skipping...")
-        return
+    for _, player in pairs(Players:GetPlayers()) do
+        CreatePlayerESP(player)
     end
     
-    -- Initialize ESP cho existing players
-    InitializeExistingPlayers()
-    
-    -- Setup connections
-    InitializeConnections()
-    
-    -- Mark as initialized
-    State.isInitialized = true
-    
-    DebugLog("HealthBar ESP initialized successfully!")
+    DebugLog("Force updated all players")
 end
 
--- Run initialization
-Initialize()
+-- Alias cho ForceUpdateAll (để giống logic Chams)
+function HealthAPI:Refresh()
+    HealthAPI:ForceUpdateAll()
+end
 
--- Return HealthAPI
+-- Quản lý Whitelist
+function HealthAPI:AddToWhitelist(name) Configuration.whitelist[name] = true end
+function HealthAPI:RemoveFromWhitelist(name) Configuration.whitelist[name] = nil end
+function HealthAPI:ClearWhitelist() Configuration.whitelist = {} end
+
+-- Quản lý Blacklist
+function HealthAPI:AddToBlacklist(name) Configuration.blacklist[name] = true end
+function HealthAPI:RemoveFromBlacklist(name) Configuration.blacklist[name] = nil end
+function HealthAPI:ClearBlacklist() Configuration.blacklist = {} end
+
+-- Destroy toàn bộ system
+function HealthAPI:Destroy()
+    -- Disconnect connections
+    if State.renderConnection then State.renderConnection:Disconnect() end
+    if State.playerAddedConnection then State.playerAddedConnection:Disconnect() end
+    if State.playerRemovingConnection then State.playerRemovingConnection:Disconnect() end
+    
+    -- Cleanup drawings
+    for player, _ in pairs(State.espData) do
+        RemovePlayerESP(player)
+    end
+    
+    -- Reset state
+    State.espData = {}
+    State.isInitialized = false
+    
+    print("[HealthBar API] Destroyed successfully")
+end
+
 return HealthAPI
