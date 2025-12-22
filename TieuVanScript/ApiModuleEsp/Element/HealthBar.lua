@@ -1,10 +1,10 @@
 return function(healthTab, HealthAPI)
 	healthTab:Toggle({
 		Name = "Bật Health Bar",
-		Flag = "HealthBar_Enabled",
+		Flag = "HealthBar _Enabled",
 		Default = true,
 		Callback = function(value)
-			HealthBar:Toggle(value)
+			HealthAPI:Toggle(value)
 		end
 	})
 
@@ -15,9 +15,9 @@ return function(healthTab, HealthAPI)
 		Default = "Ngang",
 		Callback = function(value)
 			if value == "Ngang" then
-				HealthBar:UpdateConfig({barStyle = "horizontal"})
+				HealthAPI:UpdateConfig({barStyle = "horizontal"})
 			else
-				HealthBar:UpdateConfig({barStyle = "vertical"})
+				HealthAPI:UpdateConfig({barStyle = "vertical"})
 			end
 		end
 	})
@@ -29,11 +29,11 @@ return function(healthTab, HealthAPI)
 		Default = "Gradient",
 		Callback = function(value)
 			if value == "Tĩnh" then
-				HealthBar:UpdateConfig({barColorMode = "static"})
+				HealthAPI:UpdateConfig({barColorMode = "static"})
 			elseif value == "Gradient" then
-				HealthBar:UpdateConfig({barColorMode = "gradient"})
+				HealthAPI:UpdateConfig({barColorMode = "gradient"})
 			else
-				HealthBar:UpdateConfig({barColorMode = "rainbow"})
+				HealthAPI:UpdateConfig({barColorMode = "rainbow"})
 			end
 		end
 	})
@@ -43,7 +43,7 @@ return function(healthTab, HealthAPI)
 		Flag = "HealthHigh",
 		Color = Color3.fromRGB(0, 255, 0),
 		Callback = function(color)
-			HealthBar:UpdateConfig({barColorHigh = color})
+			HealthAPI:UpdateConfig({barColorHigh = color})
 		end
 	})
 
@@ -52,7 +52,7 @@ return function(healthTab, HealthAPI)
 		Flag = "HealthMid",
 		Color = Color3.fromRGB(255, 255, 0),
 		Callback = function(color)
-			HealthBar:UpdateConfig({barColorMid = color})
+			HealthAPI:UpdateConfig({barColorMid = color})
 		end
 	})
 
@@ -61,7 +61,7 @@ return function(healthTab, HealthAPI)
 		Flag = "HealthLow",
 		Color = Color3.fromRGB(255, 0, 0),
 		Callback = function(color)
-			HealthBar:UpdateConfig({barColorLow = color})
+			HealthAPI:UpdateConfig({barColorLow = color})
 		end
 	})
 
@@ -70,7 +70,7 @@ return function(healthTab, HealthAPI)
 		Flag = "ColorStatic",
 		Color = Color3.fromRGB(0, 255, 0),
 		Callback = function(color)
-			HealthBar:UpdateConfig({barColorStatic = color})
+			HealthAPI:UpdateConfig({barColorStatic = color})
 		end
 	})
 
@@ -79,7 +79,7 @@ return function(healthTab, HealthAPI)
 		Flag = "BackgroundColor",
 		Color = Color3.fromRGB(40, 40, 40),
 		Callback = function(color)
-			HealthBar:UpdateConfig({backgroundColor = color})
+			HealthAPI:UpdateConfig({backgroundColor = color})
 		end
 	})
 
@@ -88,7 +88,7 @@ return function(healthTab, HealthAPI)
 		Flag = "OutlineColor",
 		Color = Color3.fromRGB(0, 0, 0),
 		Callback = function(color)
-			HealthBar:UpdateConfig({outlineColor = color})
+			HealthAPI:UpdateConfig({outlineColor = color})
 		end
 	})
 
@@ -99,7 +99,7 @@ return function(healthTab, HealthAPI)
 		Max = 200,
 		Default = 60,
 		Callback = function(value)
-			HealthBar:UpdateConfig({barWidth = value})
+			HealthAPI:UpdateConfig({barWidth = value})
 		end
 	})
 
@@ -110,7 +110,7 @@ return function(healthTab, HealthAPI)
 		Max = 20,
 		Default = 4,
 		Callback = function(value)
-			HealthBar:UpdateConfig({barHeight = value})
+			HealthAPI:UpdateConfig({barHeight = value})
 		end
 	})
 
@@ -121,7 +121,7 @@ return function(healthTab, HealthAPI)
 		Max = 50,
 		Default = -5,
 		Callback = function(value)
-			HealthBar:UpdateConfig({barOffsetY = value})
+			HealthAPI:UpdateConfig({barOffsetY = value})
 		end
 	})
 
@@ -132,7 +132,7 @@ return function(healthTab, HealthAPI)
 		Max = 20,
 		Default = 4,
 		Callback = function(value)
-			HealthBar:UpdateConfig({verticalWidth = value})
+			HealthAPI:UpdateConfig({verticalWidth = value})
 		end
 	})
 
@@ -143,7 +143,7 @@ return function(healthTab, HealthAPI)
 		Max = 200,
 		Default = 40,
 		Callback = function(value)
-			HealthBar:UpdateConfig({verticalHeight = value})
+			HealthAPI:UpdateConfig({verticalHeight = value})
 		end
 	})
 
@@ -154,7 +154,7 @@ return function(healthTab, HealthAPI)
 		Max = 50,
 		Default = -35,
 		Callback = function(value)
-			HealthBar:UpdateConfig({verticalOffsetX = value})
+			HealthAPI:UpdateConfig({verticalOffsetX = value})
 		end
 	})
 
@@ -165,7 +165,7 @@ return function(healthTab, HealthAPI)
 		Max = 5,
 		Default = 1,
 		Callback = function(value)
-			HealthBar:UpdateConfig({outlineSize = value})
+			HealthAPI:UpdateConfig({outlineSize = value})
 		end
 	})
 
@@ -176,7 +176,7 @@ return function(healthTab, HealthAPI)
 		Max = 0.5,
 		Default = 0.15,
 		Callback = function(value)
-			HealthBar:UpdateConfig({lerpSpeed = value})
+			HealthAPI:UpdateConfig({lerpSpeed = value})
 		end
 	})
 
@@ -185,7 +185,7 @@ return function(healthTab, HealthAPI)
 		Flag = "FadeInOut",
 		Default = false,
 		Callback = function(value)
-			HealthBar:UpdateConfig({fadeInOut = value})
+			HealthAPI:UpdateConfig({fadeInOut = value})
 		end
 	})
 
@@ -196,7 +196,7 @@ return function(healthTab, HealthAPI)
 		Max = 0.5,
 		Default = 0.1,
 		Callback = function(value)
-			HealthBar:UpdateConfig({fadeSpeed = value})
+			HealthAPI:UpdateConfig({fadeSpeed = value})
 		end
 	})
 
@@ -205,7 +205,7 @@ return function(healthTab, HealthAPI)
 		Flag = "ShowHealthText",
 		Default = false,
 		Callback = function(value)
-			HealthBar:UpdateConfig({showHealthText = value})
+			HealthAPI:UpdateConfig({showHealthText = value})
 		end
 	})
 
@@ -216,11 +216,11 @@ return function(healthTab, HealthAPI)
 		Default = "Phần trăm",
 		Callback = function(value)
 			if value == "Phần trăm" then
-				HealthBar:UpdateConfig({textMode = "percent"})
+				HealthAPI:UpdateConfig({textMode = "percent"})
 			elseif value == "Giá trị" then
-				HealthBar:UpdateConfig({textMode = "value"})
+				HealthAPI:UpdateConfig({textMode = "value"})
 			else
-				HealthBar:UpdateConfig({textMode = "both"})
+				HealthAPI:UpdateConfig({textMode = "both"})
 			end
 		end
 	})
@@ -232,7 +232,7 @@ return function(healthTab, HealthAPI)
 		Default = "Trên",
 		Callback = function(value)
 			local positions = {["Trên"] = "top", ["Dưới"] = "bottom", ["Trái"] = "left", ["Phải"] = "right", ["Giữa"] = "center"}
-			HealthBar:UpdateConfig({textPosition = positions[value]})
+			HealthAPI:UpdateConfig({textPosition = positions[value]})
 		end
 	})
 
@@ -243,7 +243,7 @@ return function(healthTab, HealthAPI)
 		Max = 24,
 		Default = 13,
 		Callback = function(value)
-			HealthBar:UpdateConfig({textSize = value})
+			HealthAPI:UpdateConfig({textSize = value})
 		end
 	})
 
@@ -252,7 +252,7 @@ return function(healthTab, HealthAPI)
 		Flag = "TextColor",
 		Color = Color3.fromRGB(255, 255, 255),
 		Callback = function(color)
-			HealthBar:UpdateConfig({textColor = color})
+			HealthAPI:UpdateConfig({textColor = color})
 		end
 	})
 
@@ -261,7 +261,7 @@ return function(healthTab, HealthAPI)
 		Flag = "TextOutline",
 		Default = true,
 		Callback = function(value)
-			HealthBar:UpdateConfig({textOutline = value})
+			HealthAPI:UpdateConfig({textOutline = value})
 		end
 	})
 
@@ -270,7 +270,7 @@ return function(healthTab, HealthAPI)
 		Flag = "TextOutlineColor",
 		Color = Color3.fromRGB(0, 0, 0),
 		Callback = function(color)
-			HealthBar:UpdateConfig({textOutlineColor = color})
+			HealthAPI:UpdateConfig({textOutlineColor = color})
 		end
 	})
 
@@ -281,7 +281,7 @@ return function(healthTab, HealthAPI)
 		Max = 50,
 		Default = 0,
 		Callback = function(value)
-			HealthBar:UpdateConfig({textOffsetX = value})
+			HealthAPI:UpdateConfig({textOffsetX = value})
 		end
 	})
 
@@ -292,7 +292,7 @@ return function(healthTab, HealthAPI)
 		Max = 50,
 		Default = -15,
 		Callback = function(value)
-			HealthBar:UpdateConfig({textOffsetY = value})
+			HealthAPI:UpdateConfig({textOffsetY = value})
 		end
 	})
 
@@ -301,7 +301,7 @@ return function(healthTab, HealthAPI)
 		Flag = "TeamFilter",
 		Default = false,
 		Callback = function(value)
-			HealthBar:UpdateConfig({teamFilter = value})
+			HealthAPI:UpdateConfig({teamFilter = value})
 		end
 	})
 
@@ -312,9 +312,9 @@ return function(healthTab, HealthAPI)
 		Default = "Standard",
 		Callback = function(value)
 			if value == "Standard" then
-				HealthBar:UpdateConfig({teamFilterMode = "standard"})
+				HealthAPI:UpdateConfig({teamFilterMode = "standard"})
 			else
-				HealthBar:UpdateConfig({teamFilterMode = "attribute"})
+				HealthAPI:UpdateConfig({teamFilterMode = "attribute"})
 			end
 		end
 	})
@@ -326,7 +326,7 @@ return function(healthTab, HealthAPI)
 		Max = 10000,
 		Default = 5000,
 		Callback = function(value)
-			HealthBar:UpdateConfig({maxDistance = value})
+			HealthAPI:UpdateConfig({maxDistance = value})
 		end
 	})
 
@@ -335,7 +335,7 @@ return function(healthTab, HealthAPI)
 		Flag = "ErrorRecovery",
 		Default = true,
 		Callback = function(value)
-			HealthBar:UpdateConfig({enableErrorRecovery = value})
+			HealthAPI:UpdateConfig({enableErrorRecovery = value})
 		end
 	})
 
@@ -344,21 +344,21 @@ return function(healthTab, HealthAPI)
 		Flag = "DebugMode",
 		Default = false,
 		Callback = function(value)
-			HealthBar:UpdateConfig({debugMode = value})
+			HealthAPI:UpdateConfig({debugMode = value})
 		end
 	})
 
 	healthTab:Button({
 		Name = "Làm mới Health Bar",
 		Callback = function()
-			HealthBar:Refresh()
+			HealthAPI:Refresh()
 		end
 	})
 
 	healthTab:Button({
 		Name = "Reset lỗi",
 		Callback = function()
-			HealthBar:ResetErrors()
+			HealthAPI:ResetErrors()
 		end
 	})
 end
