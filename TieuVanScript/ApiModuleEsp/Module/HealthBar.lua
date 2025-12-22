@@ -46,7 +46,7 @@ local DrawingNew = Drawing.new
 -- Tất cả cấu hình được quản lý tập trung tại đây
 local Configuration = {
     -- [Cài đặt chung]
-    enabled = true,                                 -- Bật/tắt ESP
+    enabled = false,                                 -- Bật/tắt ESP
     maxDistance = 5000,                             -- Khoảng cách tối đa hiển thị
     debugMode = false,                              -- Chế độ debug (in log)
     
