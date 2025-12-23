@@ -1,24 +1,24 @@
-return function(aimTab, AimbotAPI)
-	aimTab:Toggle({
+return function(AimbotTab, Config)
+	AimbotTab:Toggle({
 		Name = "Bật Aimbot",
 		Flag = "AimbotEnabled",
 		Default = false,
 		Callback = function(value)
-			AimbotAPI.Enabled = value
+			Config.Enabled = value
 		end
 	})
 
-	aimTab:Dropdown({
+	AimbotTab:Dropdown({
 		Name = "Kiểu Aim",
 		Flag = "AimMethod",
 		Items = {"Camera", "Mouse", "Hybrid"},
 		Default = "Camera",
 		Callback = function(value)
-			AimbotAPI.AimMethod = value
+			Config.AimMethod = value
 		end
 	})
 
-	aimTab:Slider({
+	AimbotTab:Slider({
 		Name = "Tốc độ Aim",
 		Flag = "AimSpeed",
 		Min = 0.1,
@@ -26,11 +26,11 @@ return function(aimTab, AimbotAPI)
 		Default = 0.5,
 		Round = 2,
 		Callback = function(value)
-			AimbotAPI.Speed = value
+			Config.Speed = value
 		end
 	})
 
-	aimTab:Slider({
+	AimbotTab:Slider({
 		Name = "Phạm vi",
 		Flag = "AimRange",
 		Min = 100,
@@ -38,49 +38,49 @@ return function(aimTab, AimbotAPI)
 		Default = 5000,
 		Round = 0,
 		Callback = function(value)
-			AimbotAPI.Range = value
+			Config.Range = value
 		end
 	})
 
-	aimTab:Dropdown({
+	AimbotTab:Dropdown({
 		Name = "Mục tiêu chính",
 		Flag = "TargetPart",
 		Items = {"Head", "HumanoidRootPart", "UpperTorso", "LowerTorso"},
 		Default = "Head",
 		Callback = function(value)
-			AimbotAPI.Target = value
+			Config.Target = value
 		end
 	})
 
-	aimTab:Toggle({
+	AimbotTab:Toggle({
 		Name = "Khóa mục tiêu",
 		Flag = "LockTarget",
 		Default = false,
 		Callback = function(value)
-			AimbotAPI.LockEnabled = value
+			Config.LockEnabled = value
 		end
 	})
 
-	aimTab:Toggle({
+	AimbotTab:Toggle({
 		Name = "Phá khóa khi chết",
 		Flag = "LockBreakOnDeath",
 		Default = true,
 		Callback = function(value)
-			AimbotAPI.LockBreakOnDeath = value
+			Config.LockBreakOnDeath = value
 		end
 	})
 
-	aimTab:Dropdown({
+	AimbotTab:Dropdown({
 		Name = "Kiểu Smoothing",
 		Flag = "SmoothingType",
 		Items = {"Linear", "OutQuad", "OutCubic", "OutQuart", "OutQuint", "OutExpo", "InOutSine", "OutBack", "OutElastic"},
 		Default = "OutQuad",
 		Callback = function(value)
-			AimbotAPI.Smoothing.EaseType = value
+			Config.Smoothing.EaseType = value
 		end
 	})
 
-	aimTab:Slider({
+	AimbotTab:Slider({
 		Name = "Kích thước FOV",
 		Flag = "FOVSize",
 		Min = 50,
@@ -88,38 +88,38 @@ return function(aimTab, AimbotAPI)
 		Default = 100,
 		Round = 0,
 		Callback = function(value)
-			AimbotAPI.FOV.Size = value
+			Config.FOV.Size = value
 		end
 	})
 
-	aimTab:ColorPicker({
+	AimbotTab:ColorPicker({
 		Name = "Màu FOV",
 		Flag = "FOVColor",
 		Color = Color3.fromRGB(255, 255, 255),
 		Callback = function(color)
-			AimbotAPI.FOV.Color = color
+			Config.FOV.Color = color
 		end
 	})
 
-	aimTab:Toggle({
+	AimbotTab:Toggle({
 		Name = "Ẩn FOV",
 		Flag = "FOVHidden",
 		Default = false,
 		Callback = function(value)
-			AimbotAPI.FOV.Hidden = value
+			Config.FOV.Hidden = value
 		end
 	})
 
-	aimTab:Toggle({
+	AimbotTab:Toggle({
 		Name = "Rainbow FOV",
 		Flag = "RainbowFOV",
 		Default = false,
 		Callback = function(value)
-			AimbotAPI.FOV.Rainbow.Enabled = value
+			Config.FOV.Rainbow.Enabled = value
 		end
 	})
 
-	aimTab:Slider({
+	AimbotTab:Slider({
 		Name = "Tốc độ Rainbow",
 		Flag = "RainbowSpeed",
 		Min = 0.1,
@@ -127,20 +127,20 @@ return function(aimTab, AimbotAPI)
 		Default = 1,
 		Round = 1,
 		Callback = function(value)
-			AimbotAPI.FOV.Rainbow.Speed = value
+			Config.FOV.Rainbow.Speed = value
 		end
 	})
 
-	aimTab:Toggle({
+	AimbotTab:Toggle({
 		Name = "Dự đoán vị trí",
 		Flag = "PredictionEnabled",
 		Default = false,
 		Callback = function(value)
-			AimbotAPI.Prediction.Enabled = value
+			Config.Prediction.Enabled = value
 		end
 	})
 
-	aimTab:Slider({
+	AimbotTab:Slider({
 		Name = "Hệ số dự đoán",
 		Flag = "PredictionFactor",
 		Min = 0.05,
@@ -148,21 +148,21 @@ return function(aimTab, AimbotAPI)
 		Default = 0.12,
 		Round = 2,
 		Callback = function(value)
-			AimbotAPI.Prediction.Factor = value
+			Config.Prediction.Factor = value
 		end
 	})
 
-	aimTab:Dropdown({
+	AimbotTab:Dropdown({
 		Name = "Chế độ dự đoán",
 		Flag = "PredictionMode",
 		Items = {"Linear", "Quadratic", "Adaptive"},
 		Default = "Linear",
 		Callback = function(value)
-			AimbotAPI.Prediction.Mode = value
+			Config.Prediction.Mode = value
 		end
 	})
 
-	aimTab:Slider({
+	AimbotTab:Slider({
 		Name = "Velocity Smooth",
 		Flag = "VelocitySmooth",
 		Min = 0,
@@ -170,20 +170,20 @@ return function(aimTab, AimbotAPI)
 		Default = 0.5,
 		Round = 2,
 		Callback = function(value)
-			AimbotAPI.Prediction.VelocitySmooth = value
+			Config.Prediction.VelocitySmooth = value
 		end
 	})
 
-	aimTab:Toggle({
+	AimbotTab:Toggle({
 		Name = "Sticky Aim",
 		Flag = "StickyAimEnabled",
 		Default = false,
 		Callback = function(value)
-			AimbotAPI.StickyAim.Enabled = value
+			Config.StickyAim.Enabled = value
 		end
 	})
 
-	aimTab:Slider({
+	AimbotTab:Slider({
 		Name = "Sticky Multiplier",
 		Flag = "StickyMultiplier",
 		Min = 1,
@@ -191,11 +191,11 @@ return function(aimTab, AimbotAPI)
 		Default = 1.5,
 		Round = 1,
 		Callback = function(value)
-			AimbotAPI.StickyAim.Multiplier = value
+			Config.StickyAim.Multiplier = value
 		end
 	})
 
-	aimTab:Slider({
+	AimbotTab:Slider({
 		Name = "Sticky Break Distance",
 		Flag = "StickyBreakDistance",
 		Min = 100,
@@ -203,20 +203,20 @@ return function(aimTab, AimbotAPI)
 		Default = 300,
 		Round = 0,
 		Callback = function(value)
-			AimbotAPI.StickyAim.BreakDistance = value
+			Config.StickyAim.BreakDistance = value
 		end
 	})
 
-	aimTab:Toggle({
+	AimbotTab:Toggle({
 		Name = "Auto Switch Target",
 		Flag = "AutoSwitchEnabled",
 		Default = false,
 		Callback = function(value)
-			AimbotAPI.AutoSwitch.Enabled = value
+			Config.AutoSwitch.Enabled = value
 		end
 	})
 
-	aimTab:Slider({
+	AimbotTab:Slider({
 		Name = "Switch Delay",
 		Flag = "SwitchDelay",
 		Min = 0.1,
@@ -224,38 +224,38 @@ return function(aimTab, AimbotAPI)
 		Default = 0.3,
 		Round = 2,
 		Callback = function(value)
-			AimbotAPI.AutoSwitch.Delay = value
+			Config.AutoSwitch.Delay = value
 		end
 	})
 
-	aimTab:Toggle({
+	AimbotTab:Toggle({
 		Name = "Kiểm tra Team",
 		Flag = "TeamCheckEnabled",
 		Default = false,
 		Callback = function(value)
-			AimbotAPI.TeamCheck = value
+			Config.TeamCheck = value
 		end
 	})
 
-	aimTab:Toggle({
+	AimbotTab:Toggle({
 		Name = "Kiểm tra tường",
 		Flag = "WallCheckEnabled",
 		Default = false,
 		Callback = function(value)
-			AimbotAPI.WallCheck = value
+			Config.WallCheck = value
 		end
 	})
 
-	aimTab:Toggle({
+	AimbotTab:Toggle({
 		Name = "Kiểm tra sống",
 		Flag = "AliveCheckEnabled",
 		Default = true,
 		Callback = function(value)
-			AimbotAPI.AliveCheck = value
+			Config.AliveCheck = value
 		end
 	})
 
-	aimTab:Slider({
+	AimbotTab:Slider({
 		Name = "Mouse Sensitivity",
 		Flag = "MouseSensitivity",
 		Min = 0.1,
@@ -263,11 +263,11 @@ return function(aimTab, AimbotAPI)
 		Default = 1,
 		Round = 1,
 		Callback = function(value)
-			AimbotAPI.MouseSensitivity = value
+			Config.MouseSensitivity = value
 		end
 	})
 
-	aimTab:Slider({
+	AimbotTab:Slider({
 		Name = "Update Rate",
 		Flag = "UpdateRate",
 		Min = 1,
@@ -275,20 +275,20 @@ return function(aimTab, AimbotAPI)
 		Default = 1,
 		Round = 0,
 		Callback = function(value)
-			AimbotAPI.UpdateRate = value
+			Config.UpdateRate = value
 		end
 	})
 
-	aimTab:Toggle({
+	AimbotTab:Toggle({
 		Name = "Silent Aim",
 		Flag = "SilentAimEnabled",
 		Default = false,
 		Callback = function(value)
-			AimbotAPI.SilentAim.Enabled = value
+			Config.SilentAim.Enabled = value
 		end
 	})
 
-	aimTab:Slider({
+	AimbotTab:Slider({
 		Name = "Silent Aim Hit Chance",
 		Flag = "SilentAimHitChance",
 		Min = 1,
@@ -296,42 +296,42 @@ return function(aimTab, AimbotAPI)
 		Default = 100,
 		Round = 0,
 		Callback = function(value)
-			AimbotAPI.SilentAim.HitChance = value
+			Config.SilentAim.HitChance = value
 		end
 	})
 
-	aimTab:Toggle({
+	AimbotTab:Toggle({
 		Name = "Debug Mode",
 		Flag = "DebugModeEnabled",
 		Default = false,
 		Callback = function(value)
-			AimbotAPI.Debug = value
+			Config.Debug = value
 		end
 	})
 
-	aimTab:Button({
+	AimbotTab:Button({
 		Name = "Bỏ khóa mục tiêu",
 		Callback = function()
-			AimbotAPI.State.LockedPlayer = nil
-			AimbotAPI.State.CurrentTarget = nil
+			Config.State.LockedPlayer = nil
+			Config.State.CurrentTarget = nil
 		end
 	})
 
-	aimTab:Button({
+	AimbotTab:Button({
 		Name = "Reset Velocity Cache",
 		Callback = function()
-			AimbotAPI.State.VelocityCache = {}
+			Config.State.VelocityCache = {}
 		end
 	})
 
-	aimTab:Button({
+	AimbotTab:Button({
 		Name = "Reset tất cả",
 		Callback = function()
-			AimbotAPI.State.LockedPlayer = nil
-			AimbotAPI.State.CurrentTarget = nil
-			AimbotAPI.State.VelocityCache = {}
-			AimbotAPI.State.RainbowHue = 0
-			AimbotAPI.State.FrameCount = 0
+			Config.State.LockedPlayer = nil
+			Config.State.CurrentTarget = nil
+			Config.State.VelocityCache = {}
+			Config.State.RainbowHue = 0
+			Config.State.FrameCount = 0
 		end
 	})
 end
