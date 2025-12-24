@@ -22,10 +22,10 @@ return function(AimbotTab, Config)
 	AimbotTab:Slider({
 		Name = "Tốc độ Aim",
 		Flag = "AimSpeed",
-		Min = 1,
-		Max = 100,
-		Default = 50,
-		Round = 0,
+		Min = 0.1,
+		Max = 1,
+		Default = 0.5,
+		Round = 2,
 		Callback = function(value)
 			Config.Speed = value
 		end
@@ -94,10 +94,10 @@ return function(AimbotTab, Config)
 	AimbotTab:Slider({
 		Name = "Sticky Multiplier",
 		Flag = "StickyMultiplier",
-		Min = 100,
-		Max = 300,
-		Default = 150,
-		Round = 0,
+		Min = 1,
+		Max = 3,
+		Default = 1.5,
+		Round = 2,
 		Callback = function(value)
 			Config.StickyAim.Multiplier = value
 		end
@@ -138,10 +138,10 @@ return function(AimbotTab, Config)
 	AimbotTab:Slider({
 		Name = "Hệ số dự đoán",
 		Flag = "PredictionFactor",
-		Min = 1,
-		Max = 50,
-		Default = 12,
-		Round = 0,
+		Min = 0.05,
+		Max = 0.5,
+		Default = 0.12,
+		Round = 2,
 		Callback = function(value)
 			Config.Prediction.Factor = value
 		end
@@ -150,10 +150,10 @@ return function(AimbotTab, Config)
 	AimbotTab:Slider({
 		Name = "Velocity Smooth",
 		Flag = "VelocitySmooth",
-		Min = 1,
-		Max = 100,
-		Default = 50,
-		Round = 0,
+		Min = 0.1,
+		Max = 1,
+		Default = 0.5,
+		Round = 2,
 		Callback = function(value)
 			Config.Prediction.VelocitySmooth = value
 		end
@@ -171,10 +171,10 @@ return function(AimbotTab, Config)
 	AimbotTab:Slider({
 		Name = "AI Strength",
 		Flag = "AIStrength",
-		Min = 1,
-		Max = 100,
-		Default = 50,
-		Round = 0,
+		Min = 0.1,
+		Max = 1,
+		Default = 0.5,
+		Round = 2,
 		Callback = function(value)
 			Config.Prediction.AIStrength = value
 		end
@@ -204,10 +204,10 @@ return function(AimbotTab, Config)
 	AimbotTab:Slider({
 		Name = "Acceleration Factor",
 		Flag = "AccelerationFactor",
-		Min = 1,
-		Max = 100,
-		Default = 20,
-		Round = 0,
+		Min = 0.1,
+		Max = 1,
+		Default = 0.2,
+		Round = 2,
 		Callback = function(value)
 			Config.Prediction.AccelerationFactor = value
 		end
@@ -216,10 +216,10 @@ return function(AimbotTab, Config)
 	AimbotTab:Slider({
 		Name = "Direction Weight",
 		Flag = "DirectionWeight",
-		Min = 1,
-		Max = 100,
-		Default = 70,
-		Round = 0,
+		Min = 0.1,
+		Max = 1,
+		Default = 0.7,
+		Round = 2,
 		Callback = function(value)
 			Config.Prediction.DirectionWeight = value
 		end
@@ -239,10 +239,10 @@ return function(AimbotTab, Config)
 	AimbotTab:Slider({
 		Name = "Mouse Sensitivity",
 		Flag = "MouseSensitivity",
-		Min = 1,
-		Max = 500,
-		Default = 100,
-		Round = 0,
+		Min = 0.1,
+		Max = 5,
+		Default = 1,
+		Round = 2,
 		Callback = function(value)
 			Config.MouseSensitivity = value
 		end
@@ -342,12 +342,12 @@ return function(AimbotTab, Config)
 	AimbotTab:Slider({
 		Name = "Tốc độ Rainbow",
 		Flag = "RainbowSpeed",
-		Min = 1,
-		Max = 500,
-		Default = 100,
-		Round = 0,
+		Min = 0.1,
+		Max = 5,
+		Default = 1,
+		Round = 1,
 		Callback = function(value)
-			Config.FOV.Rainbow.Speed = value / 100
+			Config.FOV.Rainbow.Speed = value
 		end
 	})
 
@@ -382,10 +382,10 @@ return function(AimbotTab, Config)
 	AimbotTab:Slider({
 		Name = "Switch Delay",
 		Flag = "SwitchDelay",
-		Min = 1,
-		Max = 100,
-		Default = 30,
-		Round = 0,
+		Min = 0.1,
+		Max = 1,
+		Default = 0.3,
+		Round = 2,
 		Callback = function(value)
 			Config.AutoSwitch.Delay = value
 		end
@@ -408,7 +408,7 @@ return function(AimbotTab, Config)
 		Min = 0,
 		Max = 10,
 		Default = 2,
-		Round = 0,
+		Round = 1,
 		Callback = function(value)
 			Config.MovementMode.StandingThreshold = value
 		end
@@ -420,7 +420,7 @@ return function(AimbotTab, Config)
 		Min = 0,
 		Max = 50,
 		Default = 10,
-		Round = 0,
+		Round = 1,
 		Callback = function(value)
 			Config.MovementMode.RunningThreshold = value
 		end
@@ -467,10 +467,10 @@ return function(AimbotTab, Config)
 	AimbotTab:Slider({
 		Name = "Silent Aim Hit Chance",
 		Flag = "SilentAimHitChance",
-		Min = 1,
-		Max = 100,
-		Default = 100,
-		Round = 0,
+		Min = 0,
+		Max = 1,
+		Default = 1,
+		Round = 2,
 		Callback = function(value)
 			Config.SilentAim.HitChance = value
 		end
@@ -520,9 +520,9 @@ return function(AimbotTab, Config)
 		Name = "Visibility Dot Transparency",
 		Flag = "VisibilityDotTransparency",
 		Min = 0,
-		Max = 100,
+		Max = 1,
 		Default = 0,
-		Round = 0,
+		Round = 2,
 		Callback = function(value)
 			Config.VisibilityDot.Transparency = value
 		end
@@ -549,12 +549,12 @@ return function(AimbotTab, Config)
 	AimbotTab:Slider({
 		Name = "Visibility Dot Outline Thickness",
 		Flag = "VisibilityDotOutlineThickness",
-		Min = 1,
-		Max = 500,
-		Default = 100,
-		Round = 0,
+		Min = 0.1,
+		Max = 5,
+		Default = 1,
+		Round = 1,
 		Callback = function(value)
-			Config.VisibilityDot.OutlineThickness = value / 100
+			Config.VisibilityDot.OutlineThickness = value
 		end
 	})
 
@@ -581,10 +581,10 @@ return function(AimbotTab, Config)
 	AimbotTab:Slider({
 		Name = "Hitbox Head Size",
 		Flag = "HitboxHeadSize",
-		Min = 50,
-		Max = 500,
-		Default = 200,
-		Round = 0,
+		Min = 0.5,
+		Max = 5,
+		Default = 2,
+		Round = 1,
 		Callback = function(value)
 			Config.Hitbox.HeadSize = value
 		end
@@ -593,10 +593,10 @@ return function(AimbotTab, Config)
 	AimbotTab:Slider({
 		Name = "Hitbox Body Size",
 		Flag = "HitboxBodySize",
-		Min = 50,
-		Max = 500,
-		Default = 150,
-		Round = 0,
+		Min = 0.5,
+		Max = 5,
+		Default = 1.5,
+		Round = 1,
 		Callback = function(value)
 			Config.Hitbox.BodySize = value
 		end
@@ -615,9 +615,9 @@ return function(AimbotTab, Config)
 		Name = "Hitbox Transparency",
 		Flag = "HitboxTransparency",
 		Min = 0,
-		Max = 100,
-		Default = 70,
-		Round = 0,
+		Max = 1,
+		Default = 0.7,
+		Round = 2,
 		Callback = function(value)
 			Config.Hitbox.Transparency = value
 		end
