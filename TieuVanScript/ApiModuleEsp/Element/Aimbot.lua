@@ -76,7 +76,7 @@ return function(AimbotTab, Config)
 	AimbotTab:Toggle({
 		Name = "Phá khóa khi chết",
 		Flag = "LockBreakOnDeath",
-		Default = true,
+		Default = false,
 		Callback = function(value)
 			Config.LockBreakOnDeath = value
 		end
@@ -183,7 +183,7 @@ return function(AimbotTab, Config)
 	AimbotTab:Toggle({
 		Name = "AI Adaptive",
 		Flag = "AIAdaptive",
-		Default = true,
+		Default = false,
 		Callback = function(value)
 			Config.Prediction.AIAdaptive = value
 		end
@@ -430,7 +430,7 @@ return function(AimbotTab, Config)
 	AimbotTab:Toggle({
 		Name = "Kiểm tra sống",
 		Flag = "AliveCheckEnabled",
-		Default = true,
+		Default = false,
 		Callback = function(value)
 			Config.AliveCheck = value
 		end
@@ -480,7 +480,7 @@ return function(AimbotTab, Config)
 	AimbotTab:Toggle({
 		Name = "Visibility Dot",
 		Flag = "VisibilityDotEnabled",
-		Default = true,
+		Default = false,
 		Callback = function(value)
 			Config.VisibilityDot.Enabled = value
 		end
@@ -510,7 +510,7 @@ return function(AimbotTab, Config)
 	AimbotTab:Toggle({
 		Name = "Visibility Dot Filled",
 		Flag = "VisibilityDotFilled",
-		Default = true,
+		Default = false,
 		Callback = function(value)
 			Config.VisibilityDot.Filled = value
 		end
@@ -531,7 +531,7 @@ return function(AimbotTab, Config)
 	AimbotTab:Toggle({
 		Name = "Visibility Dot Outline",
 		Flag = "VisibilityDotOutline",
-		Default = true,
+		Default = false,
 		Callback = function(value)
 			Config.VisibilityDot.OutlineEnabled = value
 		end
@@ -626,7 +626,7 @@ return function(AimbotTab, Config)
 	AimbotTab:Toggle({
 		Name = "Hitbox Visible Only",
 		Flag = "HitboxVisibleOnly",
-		Default = true,
+		Default = false,
 		Callback = function(value)
 			Config.Hitbox.VisibleOnly = value
 		end
