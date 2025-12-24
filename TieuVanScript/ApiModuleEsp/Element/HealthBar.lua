@@ -299,7 +299,7 @@ return function(healthTab, HealthAPI)
 	healthTab:Toggle({
 		Name = "Lọc đội",
 		Flag = "TeamFilter",
-		Default = false,
+		Default = true,
 		Callback = function(value)
 			HealthAPI:UpdateConfig({teamFilter = value})
 		end
