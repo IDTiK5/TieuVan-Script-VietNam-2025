@@ -2,7 +2,7 @@ return function(healthTab, HealthAPI)
 	healthTab:Toggle({
 		Name = "Bật Health Bar",
 		Flag = "HealthBar _Enabled",
-		Default = true,
+		Default = false,
 		Callback = function(value)
 			HealthAPI:Toggle(value)
 		end
