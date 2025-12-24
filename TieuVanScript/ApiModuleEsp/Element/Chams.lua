@@ -224,7 +224,7 @@ return function(chamsTab, ChamsAPI)
 	chamsTab:Toggle({
 		Name = "Lọc Đồng Đội",
 		Flag = "Chams_LocDongDoi",
-		Default = false,
+		Default = true,
 		Callback = function(value)
 			ChamsAPI:UpdateConfig({
 				useTeamFilter = value
