@@ -96,7 +96,7 @@ return function(boxTab, ESP)
 	boxTab:Toggle({
 		Name = "Lọc đội",
 		Flag = "TeamFilter",
-		Default = false,
+		Default = true,
 		Callback = function(value)
 			ESP.config.teamFilter = value
 			ESP:Refresh()
