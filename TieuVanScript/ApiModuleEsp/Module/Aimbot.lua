@@ -16,13 +16,13 @@ local Config = {
     },
     Target = "Head",
     TargetPriority = {"Head", "HumanoidRootPart", "UpperTorso"},
-    Range = 10000,
+    Range = 5000,
     Speed = 0.5,
     TeamCheck = false,
     WallCheck = false,
     AliveCheck = true,
     LockEnabled = false,
-    LockBreakOnDeath = false,
+    LockBreakOnDeath = true,
     Prediction = {
         Enabled = false,
         Factor = 0.12,
@@ -479,19 +479,52 @@ end)
 
 local oldNamecall
 if Config.SilentAim.Enabled then
+    State.TargetHitChance = {} -- Cache hit chance per target
+    
     oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = getnamecallmethod()
+        local method = getnamecallmethod():lower()
         local args = {...}
         
-        if method == "FindPartOnRayWithIgnoreList" or method == "Raycast" then
-            if State.LockedPlayer and Config.SilentAim.Enabled then
-                local targetPart = GetBestTargetPart(State.LockedPlayer)
-                if targetPart then
-                    if math.random(1, 100) <= Config.SilentAim.HitChance then
-                        if method == "FindPartOnRayWithIgnoreList" then
-                            local origin = args[1].Origin
-                            local newDirection = (targetPart.Position - origin).Unit * args[1].Direction.Magnitude
-                            args[1] = Ray.new(origin, newDirection)
+        local isRaycast = method == "raycast"
+        local isFindPart = method == "findpartonraywithignorelist"
+        local isFindBounds = method == "findpartboundsinradius" or method == "findpartboundsinbox"
+        
+        if isRaycast or isFindPart or isFindBounds then
+            local target = State.LockedPlayer or State.CurrentTarget
+            
+            if target and target.Parent then
+                local char = GetCharacter(target)
+                
+                if char and char.Parent then
+                    local targetPart = GetBestTargetPart(target)
+                    
+                    if targetPart and targetPart.Parent and targetPart.Position then
+                        -- Get or set persistent hit chance for this target
+                        if not State.TargetHitChance[target] then
+                            State.TargetHitChance[target] = math.random(1, 100)
+                        end
+                        
+                        if State.TargetHitChance[target] <= Config.SilentAim.HitChance then
+                            if isRaycast and self == Workspace then
+                                -- Handle Workspace:Raycast(origin, direction, params)
+                                local origin = args[1]
+                                if typeof(origin) == "Vector3" and typeof(args[2]) == "Vector3" then
+                                    local newDirection = (targetPart.Position - origin).Unit * args[2].Magnitude
+                                    args[2] = newDirection
+                                end
+                                
+                            elseif isFindPart and self == Workspace then
+                                -- Handle Workspace:FindPartOnRayWithIgnoreList(ray, ...)
+                                if typeof(args[1]) == "Ray" then
+                                    local origin = args[1].Origin
+                                    local newDirection = (targetPart.Position - origin).Unit * args[1].Direction.Magnitude
+                                    args[1] = Ray.new(origin, newDirection)
+                                end
+                                
+                            elseif isFindBounds and self == Workspace then
+                                -- Handle bounds methods - harder to redirect
+                                -- Skip for now, most games use Raycast
+                            end
                         end
                     end
                 end
@@ -499,6 +532,17 @@ if Config.SilentAim.Enabled then
         end
         
         return oldNamecall(self, unpack(args))
+    end)
+    
+    task.spawn(function()
+        while true do
+            task.wait(5)
+            for target, _ in pairs(State.TargetHitChance) do
+                if not target.Parent then
+                    State.TargetHitChance[target] = nil
+                end
+            end
+        end
     end)
 end
 
