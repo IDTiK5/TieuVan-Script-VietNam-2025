@@ -9,20 +9,20 @@ local LocalPlayer = Players.LocalPlayer
 local Config = {
     Enabled = false,
     FOV = {
-        Size = 100,
+        Size = 100.0,
         Hidden = false,
         Color = Color3.fromRGB(255, 255, 255),
-        Rainbow = {Enabled = false, Speed = 1},
-        OffsetX = 0,
-        OffsetY = 0,
-        DefaultSize = 100,
-        DefaultOffsetX = 0,
-        DefaultOffsetY = 0
+        Rainbow = {Enabled = false, Speed = 1.0},
+        OffsetX = 0.0,
+        OffsetY = 0.0,
+        DefaultSize = 100.0,
+        DefaultOffsetX = 0.0,
+        DefaultOffsetY = 0.0
     },
     Target = "Head",
     TargetPriority = {"Head", "HumanoidRootPart", "UpperTorso"},
-    Range = 5000,
-    Speed = 50,
+    Range = 5000.0,
+    Speed = 0.5,
     TeamCheck = false,
     WallCheck = false,
     AliveCheck = false,
@@ -30,20 +30,20 @@ local Config = {
     LockBreakOnDeath = false,
     MovementMode = {
         Mode = "Both",
-        StandingThreshold = 2,
-        RunningThreshold = 10
+        StandingThreshold = 2.0,
+        RunningThreshold = 10.0
     },
     Prediction = {
         Enabled = false,
-        Factor = 12,
+        Factor = 0.12,
         Mode = "Linear",
-        VelocitySmooth = 50,
+        VelocitySmooth = 0.5,
         AIEnabled = false,
-        AIStrength = 50,
+        AIStrength = 0.5,
         AIAdaptive = false,
         HistorySize = 10,
-        AccelerationFactor = 20,
-        DirectionWeight = 70
+        AccelerationFactor = 0.2,
+        DirectionWeight = 0.7
     },
     Smoothing = {
         Type = "Ease",
@@ -51,39 +51,39 @@ local Config = {
     },
     StickyAim = {
         Enabled = false,
-        Multiplier = 150,
-        BreakDistance = 300
+        Multiplier = 1.5,
+        BreakDistance = 300.0
     },
     AutoSwitch = {
         Enabled = false,
-        Delay = 30
+        Delay = 0.3
     },
     AimMethod = "Camera",
-    MouseSensitivity = 100,
-    OffsetCorrection = Vector3.new(0, 0, 0),
+    MouseSensitivity = 1.0,
+    OffsetCorrection = Vector3.new(0.0, 0.0, 0.0),
     SilentAim = {
         Enabled = false,
-        HitChance = 100
+        HitChance = 1.0
     },
     UpdateRate = 1,
     Debug = false,
     VisibilityDot = {
         Enabled = false,
         Color = Color3.fromRGB(255, 0, 0),
-        Size = 5,
+        Size = 5.0,
         Filled = false,
-        Transparency = 0,
+        Transparency = 0.0,
         OutlineEnabled = false,
         OutlineColor = Color3.fromRGB(0, 0, 0),
-        OutlineThickness = 1
+        OutlineThickness = 1.0
     },
     Hitbox = {
         Enabled = false,
         Mode = "Head",
-        HeadSize = 200,
-        BodySize = 150,
+        HeadSize = 2.0,
+        BodySize = 1.5,
         Color = Color3.fromRGB(255, 0, 255),
-        Transparency = 70,
+        Transparency = 0.7,
         VisibleOnly = false
     }
 }
@@ -94,7 +94,7 @@ local State = {
     LastTargetPos = nil,
     VelocityCache = {},
     FrameCount = 0,
-    RainbowHue = 0,
+    RainbowHue = 0.0,
     IsInGame = false,
     LastAimTime = 0,
     SmoothedVelocity = {},
@@ -117,20 +117,20 @@ fovCircle.Color = Config.FOV.Color
 
 local EaseFuncs = {
     Linear = function(t) return t end,
-    OutQuad = function(t) return 1 - (1 - t) ^ 2 end,
-    OutCubic = function(t) return 1 - (1 - t) ^ 3 end,
-    OutQuart = function(t) return 1 - (1 - t) ^ 4 end,
-    OutQuint = function(t) return 1 - (1 - t) ^ 5 end,
-    OutExpo = function(t) return t == 1 and 1 or 1 - 2 ^ (-10 * t) end,
-    InOutSine = function(t) return -(math.cos(math.pi * t) - 1) / 2 end,
+    OutQuad = function(t) return 1.0 - (1.0 - t) ^ 2 end,
+    OutCubic = function(t) return 1.0 - (1.0 - t) ^ 3 end,
+    OutQuart = function(t) return 1.0 - (1.0 - t) ^ 4 end,
+    OutQuint = function(t) return 1.0 - (1.0 - t) ^ 5 end,
+    OutExpo = function(t) return t == 1.0 and 1.0 or 1.0 - 2.0 ^ (-10.0 * t) end,
+    InOutSine = function(t) return -(math.cos(math.pi * t) - 1.0) / 2.0 end,
     OutBack = function(t)
         local c1 = 1.70158
-        local c3 = c1 + 1
-        return 1 + c3 * (t - 1) ^ 3 + c1 * (t - 1) ^ 2
+        local c3 = c1 + 1.0
+        return 1.0 + c3 * (t - 1.0) ^ 3 + c1 * (t - 1.0) ^ 2
     end,
     OutElastic = function(t)
-        if t == 0 or t == 1 then return t end
-        return 2 ^ (-10 * t) * math.sin((t * 10 - 0.75) * (2 * math.pi) / 3) + 1
+        if t == 0.0 or t == 1.0 then return t end
+        return 2.0 ^ (-10.0 * t) * math.sin((t * 10.0 - 0.75) * (2.0 * math.pi) / 3.0) + 1.0
     end
 }
 
@@ -283,7 +283,7 @@ end
 local function GetScreenCenter()
     local offsetX = Config.FOV.OffsetX
     local offsetY = Config.FOV.OffsetY
-    return Vector2.new(Camera.ViewportSize.X / 2 + offsetX, Camera.ViewportSize.Y / 2 + offsetY)
+    return Vector2.new(Camera.ViewportSize.X / 2.0 + offsetX, Camera.ViewportSize.Y / 2.0 + offsetY)
 end
 
 local function GetScreenDistance(position)
@@ -370,10 +370,10 @@ local function CalculateVelocity(player, currentPos)
     
     local rawVelocity = (currentPos - cache.Position) / deltaTime
     
-    local smoothFactor = Config.Prediction.VelocitySmooth / 100
-    local smoothedVelocity = cache.SmoothedVelocity:Lerp(rawVelocity, 1 - smoothFactor)
+    local smoothFactor = Config.Prediction.VelocitySmooth
+    local smoothedVelocity = cache.SmoothedVelocity:Lerp(rawVelocity, 1.0 - smoothFactor)
     
-    local maxSpeed = 200
+    local maxSpeed = 200.0
     if smoothedVelocity.Magnitude > maxSpeed then
         smoothedVelocity = smoothedVelocity.Unit * maxSpeed
     end
@@ -412,20 +412,20 @@ local function PredictDirectionChange(player)
     end
     avgChange = avgChange / (#directions - 1)
     
-    return avgChange * (Config.Prediction.DirectionWeight / 100)
+    return avgChange * Config.Prediction.DirectionWeight
 end
 
 local function AIPredictPosition(player, currentPos, velocity)
     if not Config.Prediction.AIEnabled then
-        return currentPos + velocity * (Config.Prediction.Factor / 100)
+        return currentPos + velocity * Config.Prediction.Factor
     end
     
     local acceleration = CalculateAcceleration(player, velocity)
     local directionChange = PredictDirectionChange(player)
     
-    local aiStrength = Config.Prediction.AIStrength / 100
-    local factor = Config.Prediction.Factor / 100
-    local accelFactor = Config.Prediction.AccelerationFactor / 100
+    local aiStrength = Config.Prediction.AIStrength
+    local factor = Config.Prediction.Factor
+    local accelFactor = Config.Prediction.AccelerationFactor
     
     local basePredict = velocity * factor
     local accelPredict = acceleration * factor * factor * accelFactor * 0.5
@@ -435,7 +435,7 @@ local function AIPredictPosition(player, currentPos, velocity)
     
     if Config.Prediction.AIAdaptive then
         local speed = velocity.Magnitude
-        local adaptiveFactor = math.clamp(speed / 50, 0.5, 2)
+        local adaptiveFactor = math.clamp(speed / 50.0, 0.5, 2.0)
         finalPredict = finalPredict * adaptiveFactor
     end
     
@@ -454,17 +454,17 @@ local function PredictPosition(player, targetPart)
     if Config.Prediction.AIEnabled then
         predictedPos = AIPredictPosition(player, currentPos, velocity)
     else
-        local factor = Config.Prediction.Factor / 100
+        local factor = Config.Prediction.Factor
         
         if Config.Prediction.Mode == "Quadratic" then
             local localHRP = GetLocalHRP()
             if localHRP then
                 local dist = (currentPos - localHRP.Position).Magnitude
-                factor = factor * math.clamp(dist / 100, 0.5, 2)
+                factor = factor * math.clamp(dist / 100.0, 0.5, 2.0)
             end
         elseif Config.Prediction.Mode == "Adaptive" then
             local speed = velocity.Magnitude
-            factor = factor * math.clamp(speed / 50, 0.5, 2)
+            factor = factor * math.clamp(speed / 50.0, 0.5, 2.0)
         end
         
         predictedPos = currentPos + velocity * factor
@@ -497,10 +497,10 @@ local function ScoreTarget(player, targetPart)
     local score = screenDist
     
     if Config.StickyAim.Enabled and player == State.LockedPlayer then
-        score = score / (Config.StickyAim.Multiplier / 100)
+        score = score / Config.StickyAim.Multiplier
     end
     
-    score = score + (worldDist / Config.Range) * 10
+    score = score + (worldDist / Config.Range) * 10.0
     
     if IsVisible(targetPart) then
         score = score * 0.8
@@ -540,8 +540,8 @@ local function GetClosestTarget()
 end
 
 local function ApplySmoothing(currentCF, targetCF, delta)
-    local speed = (Config.Speed / 100) * delta * 60
-    local easedSpeed = EaseFuncs[Config.Smoothing.EaseType](math.clamp(speed, 0, 1))
+    local speed = Config.Speed * delta * 60.0
+    local easedSpeed = EaseFuncs[Config.Smoothing.EaseType](math.clamp(speed, 0.0, 1.0))
     return currentCF:Lerp(targetCF, easedSpeed)
 end
 
@@ -559,7 +559,7 @@ local function AimAtPosition(targetPos, delta)
         local screenCenter = GetScreenCenter()
         local diff = screenTarget - screenCenter
         
-        local sensitivity = (Config.MouseSensitivity / 100) * (Config.Speed / 100)
+        local sensitivity = Config.MouseSensitivity * Config.Speed
         local moveX = diff.X * sensitivity * delta
         local moveY = diff.Y * sensitivity * delta
         
@@ -572,8 +572,8 @@ local function AimAtPosition(targetPos, delta)
         local screenCenter = GetScreenCenter()
         local diff = screenTarget - screenCenter
         
-        if diff.Magnitude > 5 then
-            local sensitivity = (Config.MouseSensitivity / 100) * (Config.Speed / 100) * 0.3
+        if diff.Magnitude > 5.0 then
+            local sensitivity = Config.MouseSensitivity * Config.Speed * 0.3
             local moveX = diff.X * sensitivity * delta
             local moveY = diff.Y * sensitivity * delta
             
@@ -587,8 +587,8 @@ end
 local function UpdateRainbowColor(delta)
     if not Config.FOV.Rainbow.Enabled then return end
     
-    State.RainbowHue = (State.RainbowHue + delta * Config.FOV.Rainbow.Speed) % 1
-    Config.FOV.Color = Color3.fromHSV(State.RainbowHue, 1, 1)
+    State.RainbowHue = (State.RainbowHue + delta * Config.FOV.Rainbow.Speed) % 1.0
+    Config.FOV.Color = Color3.fromHSV(State.RainbowHue, 1.0, 1.0)
 end
 
 local function UpdateFOVCircle()
@@ -608,14 +608,14 @@ local function CreateVisibilityDot(player)
     dot.Visible = false
     dot.ZIndex = 1000
     dot.Color = Config.VisibilityDot.Color
-    dot.Transparency = 1 - (Config.VisibilityDot.Transparency / 100)
+    dot.Transparency = 1.0 - Config.VisibilityDot.Transparency
     
     local outline = nil
     if Config.VisibilityDot.OutlineEnabled then
         outline = Drawing.new("Circle")
         outline.Thickness = Config.VisibilityDot.OutlineThickness
         outline.NumSides = 30
-        outline.Radius = Config.VisibilityDot.Size + 1
+        outline.Radius = Config.VisibilityDot.Size + 1.0
         outline.Filled = false
         outline.Visible = false
         outline.ZIndex = 999
@@ -654,12 +654,12 @@ local function UpdateVisibilityDots()
                     dots.Dot.Radius = Config.VisibilityDot.Size
                     dots.Dot.Color = Config.VisibilityDot.Color
                     dots.Dot.Filled = Config.VisibilityDot.Filled
-                    dots.Dot.Transparency = 1 - (Config.VisibilityDot.Transparency / 100)
+                    dots.Dot.Transparency = 1.0 - Config.VisibilityDot.Transparency
                     
                     if dots.Outline and Config.VisibilityDot.OutlineEnabled then
                         dots.Outline.Position = screenPos
                         dots.Outline.Visible = true
-                        dots.Outline.Radius = Config.VisibilityDot.Size + 1
+                        dots.Outline.Radius = Config.VisibilityDot.Size + 1.0
                         dots.Outline.Color = Config.VisibilityDot.OutlineColor
                         dots.Outline.Thickness = Config.VisibilityDot.OutlineThickness
                     elseif dots.Outline then
@@ -721,7 +721,7 @@ local function UpdateHitboxes()
                     
                     if Config.Hitbox.Mode == "Head" or Config.Hitbox.Mode == "Both" then
                         local head = GetCharacterPart(player, "Head")
-                        if head then table.insert(partsToModify, {Part = head, SizeMultiplier = Config.Hitbox.HeadSize / 100}) end
+                        if head then table.insert(partsToModify, {Part = head, SizeMultiplier = Config.Hitbox.HeadSize}) end
                     end
                     
                     if Config.Hitbox.Mode == "Body" or Config.Hitbox.Mode == "Both" then
@@ -729,7 +729,7 @@ local function UpdateHitboxes()
                         for _, partName in ipairs(bodyParts) do
                             local part = GetCharacterPart(player, partName)
                             if part then 
-                                table.insert(partsToModify, {Part = part, SizeMultiplier = Config.Hitbox.BodySize / 100})
+                                table.insert(partsToModify, {Part = part, SizeMultiplier = Config.Hitbox.BodySize})
                             end
                         end
                     end
@@ -745,7 +745,7 @@ local function UpdateHitboxes()
                         
                         local originalSize = part:GetAttribute("OriginalSize")
                         part.Size = originalSize * multiplier
-                        part.Transparency = Config.Hitbox.Transparency / 100
+                        part.Transparency = Config.Hitbox.Transparency
                         part.Color = Config.Hitbox.Color
                         
                         State.HitboxParts[player][part.Name] = part
@@ -795,7 +795,7 @@ local function ProcessAimbot(delta)
                     local screenDist = GetScreenDistance(part.Position)
                     local breakDist = Config.StickyAim.Enabled 
                         and Config.StickyAim.BreakDistance 
-                        or Config.FOV.Size * 2
+                        or Config.FOV.Size * 2.0
                     
                     if screenDist <= breakDist and IsVisible(part) then
                         target = State.LockedPlayer
@@ -822,7 +822,7 @@ local function ProcessAimbot(delta)
         if Config.AutoSwitch.Enabled then
             if newTarget ~= State.CurrentTarget then
                 local now = tick()
-                if now - State.LastSwitchTime >= (Config.AutoSwitch.Delay / 100) then
+                if now - State.LastSwitchTime >= Config.AutoSwitch.Delay then
                     State.CurrentTarget = newTarget
                     State.LastSwitchTime = now
                 end
@@ -878,7 +878,7 @@ if Config.SilentAim.Enabled then
                     local targetPart = GetBestTargetPart(target)
                     
                     if targetPart and targetPart.Parent then
-                        if math.random(1, 100) <= Config.SilentAim.HitChance then
+                        if math.random() <= Config.SilentAim.HitChance then
                             
                             if isRaycast then
                                 local origin = args[1]
