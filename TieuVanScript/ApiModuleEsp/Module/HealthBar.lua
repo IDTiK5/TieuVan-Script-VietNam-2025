@@ -12,7 +12,7 @@ local CONFIG = {
 	HealthBarGap = 2,
 	Side = "Left",
 	OffsetX = 0,
-	OffsetY = 0,
+	OffsetY = 58,
 	ShowSelfHealthBar = false,
 	
 	Enabled = false,
