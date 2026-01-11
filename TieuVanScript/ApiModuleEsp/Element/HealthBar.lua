@@ -1,364 +1,215 @@
-return function(healthTab, HealthAPI)
-	healthTab:Toggle({
-		Name = "Bật Health Bar",
-		Flag = "HealthBar _Enabled",
-		Default = false,
-		Callback = function(value)
-			HealthAPI:Toggle(value)
-		end
-	})
+--[[
+    HealthBar UI Module
+    Handles all UI callbacks and integrations
+    GitHub Ready
+]]
 
-	healthTab:Dropdown({
-		Name = "Kiểu Health Bar",
-		Flag = "BarStyle",
-		Items = {"Ngang", "Dọc"},
-		Default = "Ngang",
-		Callback = function(value)
-			if value == "Ngang" then
-				HealthAPI:UpdateConfig({barStyle = "horizontal"})
-			else
-				HealthAPI:UpdateConfig({barStyle = "vertical"})
-			end
-		end
-	})
+local HealthBar_UI = {}
 
-	healthTab:Dropdown({
-		Name = "Chế độ màu",
-		Flag = "ColorMode",
-		Items = {"Tĩnh", "Gradient", "Cầu vồng"},
-		Default = "Gradient",
-		Callback = function(value)
-			if value == "Tĩnh" then
-				HealthAPI:UpdateConfig({barColorMode = "static"})
-			elseif value == "Gradient" then
-				HealthAPI:UpdateConfig({barColorMode = "gradient"})
-			else
-				HealthAPI:UpdateConfig({barColorMode = "rainbow"})
-			end
-		end
-	})
+function HealthBar_UI:CreateUI(Section, API)
+    local CONFIG = API.CONFIG
+    
+    -- ===== MAIN SETTINGS =====
+    Section:Toggle({
+        Name = "Enable Health Bar",
+        Flag = "HealthBarToggle",
+        Default = false,
+        Callback = function(Value)
+            CONFIG.Enabled = Value
+        end
+    })
 
-	healthTab:ColorPicker({
-		Name = "Màu máu cao",
-		Flag = "HealthHigh",
-		Color = Color3.fromRGB(0, 255, 0),
-		Callback = function(color)
-			HealthAPI:UpdateConfig({barColorHigh = color})
-		end
-	})
+    Section:Toggle({
+        Name = "Show Self Health Bar",
+        Flag = "ShowSelfHealthBar",
+        Default = false,
+        Callback = function(Value)
+            CONFIG.ShowSelfHealthBar = Value
+        end
+    })
 
-	healthTab:ColorPicker({
-		Name = "Màu máu trung bình",
-		Flag = "HealthMid",
-		Color = Color3.fromRGB(255, 255, 0),
-		Callback = function(color)
-			HealthAPI:UpdateConfig({barColorMid = color})
-		end
-	})
+    -- ===== POSITIONING =====
+    Section:Dropdown({
+        Name = "Position",
+        Flag = "HealthBarSide",
+        Default = "Left",
+        Items = {"Left", "Right"},
+        Multi = false,
+        Callback = function(Value)
+            CONFIG.Side = Value
+        end
+    })
 
-	healthTab:ColorPicker({
-		Name = "Màu máu thấp",
-		Flag = "HealthLow",
-		Color = Color3.fromRGB(255, 0, 0),
-		Callback = function(color)
-			HealthAPI:UpdateConfig({barColorLow = color})
-		end
-	})
+    Section:Slider({
+        Name = "Offset X",
+        Flag = "OffsetX",
+        Min = -50,
+        Max = 100,
+        Default = 0,
+        Decimals = 0.1,
+        Suffix = "px",
+        Callback = function(Value)
+            CONFIG.OffsetX = Value
+        end
+    })
 
-	healthTab:ColorPicker({
-		Name = "Màu static",
-		Flag = "ColorStatic",
-		Color = Color3.fromRGB(0, 255, 0),
-		Callback = function(color)
-			HealthAPI:UpdateConfig({barColorStatic = color})
-		end
-	})
+    Section:Slider({
+        Name = "Offset Y",
+        Flag = "OffsetY",
+        Min = -50,
+        Max = 100,
+        Default = 0,
+        Decimals = 0.1,
+        Suffix = "px",
+        Callback = function(Value)
+            CONFIG.OffsetY = Value
+        end
+    })
 
-	healthTab:ColorPicker({
-		Name = "Màu nền",
-		Flag = "BackgroundColor",
-		Color = Color3.fromRGB(40, 40, 40),
-		Callback = function(color)
-			HealthAPI:UpdateConfig({backgroundColor = color})
-		end
-	})
+    Section:Slider({
+        Name = "Gap Distance",
+        Flag = "HealthBarGap",
+        Min = 0,
+        Max = 20,
+        Default = 2,
+        Decimals = 0.1,
+        Suffix = "px",
+        Callback = function(Value)
+            CONFIG.HealthBarGap = Value
+        end
+    })
 
-	healthTab:ColorPicker({
-		Name = "Màu viền",
-		Flag = "OutlineColor",
-		Color = Color3.fromRGB(0, 0, 0),
-		Callback = function(color)
-			HealthAPI:UpdateConfig({outlineColor = color})
-		end
-	})
+    Section:Slider({
+        Name = "Bar Width",
+        Flag = "HealthBarWidth",
+        Min = 1,
+        Max = 10,
+        Default = 3,
+        Decimals = 0.1,
+        Suffix = "px",
+        Callback = function(Value)
+            CONFIG.HealthBarWidth = Value
+        end
+    })
 
-	healthTab:Slider({
-		Name = "Chiều rộng (Ngang)",
-		Flag = "BarWidth",
-		Min = 20,
-		Max = 200,
-		Default = 60,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({barWidth = value})
-		end
-	})
+    -- ===== ANIMATION =====
+    Section:Slider({
+        Name = "Animation Speed",
+        Flag = "AnimationSpeed",
+        Min = 0.1,
+        Max = 1,
+        Default = 0.3,
+        Decimals = 2,
+        Suffix = "s",
+        Callback = function(Value)
+            CONFIG.AnimationSpeed = Value
+        end
+    })
 
-	healthTab:Slider({
-		Name = "Chiều cao (Ngang)",
-		Flag = "BarHeight",
-		Min = 1,
-		Max = 20,
-		Default = 4,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({barHeight = value})
-		end
-	})
+    Section:Toggle({
+        Name = "Enable Flash Effect",
+        Flag = "EnableFlashEffect",
+        Default = true,
+        Callback = function(Value)
+            CONFIG.EnableFlashEffect = Value
+        end
+    })
 
-	healthTab:Slider({
-		Name = "Offset Y (Ngang)",
-		Flag = "BarOffsetY",
-		Min = -50,
-		Max = 50,
-		Default = -5,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({barOffsetY = value})
-		end
-	})
+    Section:Slider({
+        Name = "Flash Duration",
+        Flag = "FlashDuration",
+        Min = 0.05,
+        Max = 0.5,
+        Default = 0.15,
+        Decimals = 2,
+        Suffix = "s",
+        Callback = function(Value)
+            CONFIG.FlashDuration = Value
+        end
+    })
 
-	healthTab:Slider({
-		Name = "Chiều rộng (Dọc)",
-		Flag = "VerticalWidth",
-		Min = 1,
-		Max = 20,
-		Default = 4,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({verticalWidth = value})
-		end
-	})
+    Section:Label("Damage Flash Color"):Colorpicker({
+        Name = "Damage Flash Color",
+        Flag = "DamageFlashColor",
+        Default = Color3.fromRGB(255, 0, 0),
+        Callback = function(Value)
+            CONFIG.DamageFlashColor = Value
+        end
+    })
 
-	healthTab:Slider({
-		Name = "Chiều cao (Dọc)",
-		Flag = "VerticalHeight",
-		Min = 20,
-		Max = 200,
-		Default = 40,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({verticalHeight = value})
-		end
-	})
+    Section:Label("Heal Flash Color"):Colorpicker({
+        Name = "Heal Flash Color",
+        Flag = "HealFlashColor",
+        Default = Color3.fromRGB(0, 255, 100),
+        Callback = function(Value)
+            CONFIG.HealFlashColor = Value
+        end
+    })
 
-	healthTab:Slider({
-		Name = "Offset X (Dọc)",
-		Flag = "VerticalOffsetX",
-		Min = -50,
-		Max = 50,
-		Default = -35,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({verticalOffsetX = value})
-		end
-	})
+    -- ===== TEAM SETTINGS =====
+    Section:Toggle({
+        Name = "Team Check",
+        Flag = "HealthTeamCheck",
+        Default = false,
+        Callback = function(Value)
+            CONFIG.EnableTeamCheck = Value
+        end
+    })
 
-	healthTab:Slider({
-		Name = "Độ dày viền",
-		Flag = "OutlineSize",
-		Min = 0.5,
-		Max = 5,
-		Default = 1,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({outlineSize = value})
-		end
-	})
+    Section:Toggle({
+        Name = "Enemy Only",
+        Flag = "HealthEnemyOnly",
+        Default = false,
+        Callback = function(Value)
+            CONFIG.ShowEnemyOnly = Value
+        end
+    })
 
-	healthTab:Slider({
-		Name = "Tốc độ lerp",
-		Flag = "LerpSpeed",
-		Min = 0.01,
-		Max = 0.5,
-		Default = 0.15,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({lerpSpeed = value})
-		end
-	})
+    Section:Toggle({
+        Name = "Use Team Colors",
+        Flag = "UseTeamColors",
+        Default = false,
+        Callback = function(Value)
+            CONFIG.UseTeamColors = Value
+        end
+    })
 
-	healthTab:Toggle({
-		Name = "Fade In/Out",
-		Flag = "FadeInOut",
-		Default = false,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({fadeInOut = value})
-		end
-	})
+    Section:Toggle({
+        Name = "Use Actual Team Colors",
+        Flag = "UseActualTeamColors",
+        Default = true,
+        Callback = function(Value)
+            CONFIG.UseActualTeamColors = Value
+        end
+    })
 
-	healthTab:Slider({
-		Name = "Tốc độ fade",
-		Flag = "FadeSpeed",
-		Min = 0.01,
-		Max = 0.5,
-		Default = 0.1,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({fadeSpeed = value})
-		end
-	})
+    -- ===== COLORS =====
+    Section:Label("Enemy Color"):Colorpicker({
+        Name = "Enemy Health Color",
+        Flag = "EnemyHealthColor",
+        Default = Color3.fromRGB(180, 0, 255),
+        Callback = function(Value)
+            CONFIG.EnemyHealthBarColor = Value
+        end
+    })
 
-	healthTab:Toggle({
-		Name = "Hiển thị text máu",
-		Flag = "ShowHealthText",
-		Default = false,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({showHealthText = value})
-		end
-	})
+    Section:Label("Allied Color"):Colorpicker({
+        Name = "Allied Health Color",
+        Flag = "AlliedHealthColor",
+        Default = Color3.fromRGB(0, 255, 0),
+        Callback = function(Value)
+            CONFIG.AlliedHealthBarColor = Value
+        end
+    })
 
-	healthTab:Dropdown({
-		Name = "Kiểu text máu",
-		Flag = "TextMode",
-		Items = {"Phần trăm", "Giá trị", "Cả hai"},
-		Default = "Phần trăm",
-		Callback = function(value)
-			if value == "Phần trăm" then
-				HealthAPI:UpdateConfig({textMode = "percent"})
-			elseif value == "Giá trị" then
-				HealthAPI:UpdateConfig({textMode = "value"})
-			else
-				HealthAPI:UpdateConfig({textMode = "both"})
-			end
-		end
-	})
-
-	healthTab:Dropdown({
-		Name = "Vị trí text",
-		Flag = "TextPosition",
-		Items = {"Trên", "Dưới", "Trái", "Phải", "Giữa"},
-		Default = "Trên",
-		Callback = function(value)
-			local positions = {["Trên"] = "top", ["Dưới"] = "bottom", ["Trái"] = "left", ["Phải"] = "right", ["Giữa"] = "center"}
-			HealthAPI:UpdateConfig({textPosition = positions[value]})
-		end
-	})
-
-	healthTab:Slider({
-		Name = "Kích thước text",
-		Flag = "TextSize",
-		Min = 8,
-		Max = 24,
-		Default = 13,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({textSize = value})
-		end
-	})
-
-	healthTab:ColorPicker({
-		Name = "Màu text",
-		Flag = "TextColor",
-		Color = Color3.fromRGB(255, 255, 255),
-		Callback = function(color)
-			HealthAPI:UpdateConfig({textColor = color})
-		end
-	})
-
-	healthTab:Toggle({
-		Name = "Outline text",
-		Flag = "TextOutline",
-		Default = true,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({textOutline = value})
-		end
-	})
-
-	healthTab:ColorPicker({
-		Name = "Màu outline text",
-		Flag = "TextOutlineColor",
-		Color = Color3.fromRGB(0, 0, 0),
-		Callback = function(color)
-			HealthAPI:UpdateConfig({textOutlineColor = color})
-		end
-	})
-
-	healthTab:Slider({
-		Name = "Offset X text",
-		Flag = "TextOffsetX",
-		Min = -50,
-		Max = 50,
-		Default = 0,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({textOffsetX = value})
-		end
-	})
-
-	healthTab:Slider({
-		Name = "Offset Y text",
-		Flag = "TextOffsetY",
-		Min = -50,
-		Max = 50,
-		Default = -15,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({textOffsetY = value})
-		end
-	})
-
-	healthTab:Toggle({
-		Name = "Lọc đội",
-		Flag = "TeamFilter",
-		Default = true,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({teamFilter = value})
-		end
-	})
-
-	healthTab:Dropdown({
-		Name = "Chế độ lọc đội",
-		Flag = "TeamFilterMode",
-		Items = {"Standard", "Attribute"},
-		Default = "Standard",
-		Callback = function(value)
-			if value == "Standard" then
-				HealthAPI:UpdateConfig({teamFilterMode = "standard"})
-			else
-				HealthAPI:UpdateConfig({teamFilterMode = "attribute"})
-			end
-		end
-	})
-
-	healthTab:Slider({
-		Name = "Khoảng cách tối đa",
-		Flag = "MaxDistance",
-		Min = 100,
-		Max = 10000,
-		Default = 5000,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({maxDistance = value})
-		end
-	})
-
-	healthTab:Toggle({
-		Name = "Khôi phục lỗi tự động",
-		Flag = "ErrorRecovery",
-		Default = true,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({enableErrorRecovery = value})
-		end
-	})
-
-	healthTab:Toggle({
-		Name = "Chế độ gỡ lỗi",
-		Flag = "DebugMode",
-		Default = false,
-		Callback = function(value)
-			HealthAPI:UpdateConfig({debugMode = value})
-		end
-	})
-
-	healthTab:Button({
-		Name = "Làm mới Health Bar",
-		Callback = function()
-			HealthAPI:Refresh()
-		end
-	})
-
-	healthTab:Button({
-		Name = "Reset lỗi",
-		Callback = function()
-			HealthAPI:ResetErrors()
-		end
-	})
+    Section:Label("No Team Color"):Colorpicker({
+        Name = "No Team Color",
+        Flag = "NoTeamColor",
+        Default = Color3.fromRGB(255, 255, 255),
+        Callback = function(Value)
+            CONFIG.NoTeamColor = Value
+        end
+    })
 end
+
+return HealthBar_UI
