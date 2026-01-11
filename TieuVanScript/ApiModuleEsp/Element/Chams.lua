@@ -1,9 +1,8 @@
-return function(espPage, ChamsAPI)
-	local ChamsSection = espPage:Section({
+return function(page, ChamsAPI)
+	-- Tạo Section cho Chams
+	local ChamsSection = page:Section({
 		Name = "Chams ESP",
-		Description = "Highlight players through walls",
-		Icon = "10709782230",
-		Side = 2
+		Description = "Highlight players through walls"
 	})
 
 	ChamsSection:Toggle({
@@ -65,8 +64,7 @@ return function(espPage, ChamsAPI)
 		Name = "Depth Mode",
 		Flag = "ChamsDepthMode",
 		Default = "AlwaysOnTop",
-		Items = {"AlwaysOnTop", "Occluded"},
-		Multi = false,
+		List = {"AlwaysOnTop", "Occluded"},
 		Callback = function(Value)
 			ChamsAPI:UpdateConfig({depthMode = Value})
 		end
@@ -100,6 +98,7 @@ return function(espPage, ChamsAPI)
 		Min = 0.01,
 		Max = 0.5,
 		Default = 0.05,
+		Increment = 0.01,
 		Callback = function(Value)
 			ChamsAPI:UpdateConfig({updateInterval = Value})
 		end
@@ -111,7 +110,7 @@ return function(espPage, ChamsAPI)
 		Min = 0,
 		Max = 1,
 		Default = 0.5,
-		Decimals = 0.01,
+		Increment = 0.01,
 		Callback = function(Value)
 			ChamsAPI:UpdateConfig({fillTransparency = Value})
 		end
@@ -123,7 +122,7 @@ return function(espPage, ChamsAPI)
 		Min = 0,
 		Max = 1,
 		Default = 0,
-		Decimals = 0.01,
+		Increment = 0.01,
 		Callback = function(Value)
 			ChamsAPI:UpdateConfig({outlineTransparency = Value})
 		end
@@ -147,100 +146,100 @@ return function(espPage, ChamsAPI)
 		end
 	})
 
-	ChamsSection:Label("Fill Color"):Colorpicker({
+	ChamsSection:Color({
 		Name = "Fill Color",
 		Flag = "ChamsFillColor",
-		Default = Color3.fromRGB(0, 255, 140),
+		Color = Color3.fromRGB(0, 255, 140),
 		Callback = function(Value)
 			ChamsAPI:UpdateConfig({fillColor = Value})
 		end
 	})
 
-	ChamsSection:Label("Outline Color"):Colorpicker({
+	ChamsSection:Color({
 		Name = "Outline Color",
 		Flag = "ChamsOutlineColor",
-		Default = Color3.fromRGB(0, 255, 140),
+		Color = Color3.fromRGB(0, 255, 140),
 		Callback = function(Value)
 			ChamsAPI:UpdateConfig({outlineColor = Value})
 		end
 	})
 
-	ChamsSection:Label("Enemy Fill Color"):Colorpicker({
+	ChamsSection:Color({
 		Name = "Enemy Fill Color",
 		Flag = "ChamsEnemyFillColor",
-		Default = Color3.fromRGB(255, 0, 0),
+		Color = Color3.fromRGB(255, 0, 0),
 		Callback = function(Value)
 			ChamsAPI:UpdateConfig({EnemyFillColor = Value})
 		end
 	})
 
-	ChamsSection:Label("Enemy Outline Color"):Colorpicker({
+	ChamsSection:Color({
 		Name = "Enemy Outline Color",
 		Flag = "ChamsEnemyOutlineColor",
-		Default = Color3.fromRGB(255, 0, 0),
+		Color = Color3.fromRGB(255, 0, 0),
 		Callback = function(Value)
 			ChamsAPI:UpdateConfig({EnemyOutlineColor = Value})
 		end
 	})
 
-	ChamsSection:Label("Allied Fill Color"):Colorpicker({
+	ChamsSection:Color({
 		Name = "Allied Fill Color",
 		Flag = "ChamsAlliedFillColor",
-		Default = Color3.fromRGB(0, 255, 0),
+		Color = Color3.fromRGB(0, 255, 0),
 		Callback = function(Value)
 			ChamsAPI:UpdateConfig({AlliedFillColor = Value})
 		end
 	})
 
-	ChamsSection:Label("Allied Outline Color"):Colorpicker({
+	ChamsSection:Color({
 		Name = "Allied Outline Color",
 		Flag = "ChamsAlliedOutlineColor",
-		Default = Color3.fromRGB(0, 255, 0),
+		Color = Color3.fromRGB(0, 255, 0),
 		Callback = function(Value)
 			ChamsAPI:UpdateConfig({AlliedOutlineColor = Value})
 		end
 	})
 
-	ChamsSection:Label("No Team Color"):Colorpicker({
+	ChamsSection:Color({
 		Name = "No Team Color",
 		Flag = "ChamsNoTeamColor",
-		Default = Color3.fromRGB(255, 255, 255),
+		Color = Color3.fromRGB(255, 255, 255),
 		Callback = function(Value)
 			ChamsAPI:UpdateConfig({NoTeamColor = Value})
 		end
 	})
 
-	ChamsSection:Label("Visible Fill Color"):Colorpicker({
+	ChamsSection:Color({
 		Name = "Visible Fill Color",
 		Flag = "ChamsVisibleFillColor",
-		Default = Color3.fromRGB(0, 255, 0),
+		Color = Color3.fromRGB(0, 255, 0),
 		Callback = function(Value)
 			ChamsAPI:UpdateConfig({visibleFillColor = Value})
 		end
 	})
 
-	ChamsSection:Label("Visible Outline Color"):Colorpicker({
+	ChamsSection:Color({
 		Name = "Visible Outline Color",
 		Flag = "ChamsVisibleOutlineColor",
-		Default = Color3.fromRGB(0, 255, 0),
+		Color = Color3.fromRGB(0, 255, 0),
 		Callback = function(Value)
 			ChamsAPI:UpdateConfig({visibleOutlineColor = Value})
 		end
 	})
 
-	ChamsSection:Label("Hidden Fill Color"):Colorpicker({
+	ChamsSection:Color({
 		Name = "Hidden Fill Color",
 		Flag = "ChamsHiddenFillColor",
-		Default = Color3.fromRGB(255, 0, 0),
+		Color = Color3.fromRGB(255, 0, 0),
 		Callback = function(Value)
 			ChamsAPI:UpdateConfig({hiddenFillColor = Value})
 		end
 	})
 
-	ChamsSection:Label("Hidden Outline Color"):Colorpicker({
+	ChamsSection:Color({
 		Name = "Hidden Outline Color",
 		Flag = "ChamsHiddenOutlineColor",
-		Default = Color3.fromRGB(255, 0, 0),
+		Color = Color3.fromRGB(255, 0, 0),
 		Callback = function(Value)
 			ChamsAPI:UpdateConfig({hiddenOutlineColor = Value})
 		end
