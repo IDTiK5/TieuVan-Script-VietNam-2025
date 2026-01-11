@@ -72,7 +72,7 @@ return function(EspPage, HealthBarESPAPI)
 		Flag = "OffsetY",
 		Min = -50,
 		Max = 100,
-		Default = 0,
+		Default = 58,
 		Decimals = 0.1,
 		Suffix = "px",
 		Callback = function(Value)
