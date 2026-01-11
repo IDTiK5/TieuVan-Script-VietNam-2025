@@ -44,19 +44,6 @@ return function(EspPage, SkeletonESPAPI)
 	})
 
 	SkeletonSection:Slider({
-		Name = "Thickness",
-		Flag = "SkeletonThickness",
-		Min = 0.5,
-		Max = 3,
-		Default = 1,
-		Decimals = 0.1,
-		Suffix = "px",
-		Callback = function(Value)
-			SkeletonESPAPI:UpdateConfig({SkeletonThickness = Value})
-		end
-	})
-
-	SkeletonSection:Slider({
 		Name = "Transparency",
 		Flag = "SkeletonTransparency",
 		Min = 0,
