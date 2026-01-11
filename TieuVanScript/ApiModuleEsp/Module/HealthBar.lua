@@ -1,413 +1,575 @@
---[[
-    HealthBar API Module
-    Handles all core health bar logic and calculations
-    GitHub Ready
-]]
-
-local HealthBar_API = {}
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local Workspace = game:GetService("Workspace")
 
-local Camera = Workspace.CurrentCamera
-local LocalPlayer = Players.LocalPlayer
+local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
 
--- ===== CONFIG =====
-HealthBar_API.CONFIG = {
-    -- Main Settings
-    Enabled = false,
-    ShowSelfHealthBar = false,
-    
-    -- Bar Styling
-    HealthBarColor = Color3.fromRGB(180, 0, 255),
-    HealthBarWidth = 3,
-    HealthBarGap = 2,
-    Side = "Left",
-    OffsetX = 0,
-    OffsetY = 0,
-    
-    -- Team Settings
-    EnableTeamCheck = false,
-    ShowEnemyOnly = false,
-    ShowAlliedOnly = false,
-    
-    -- Team Colors
-    UseTeamColors = false,
-    UseActualTeamColors = true,
-    EnemyHealthBarColor = Color3.fromRGB(180, 0, 255),
-    AlliedHealthBarColor = Color3.fromRGB(0, 255, 0),
-    NoTeamColor = Color3.fromRGB(255, 255, 255),
-    
-    -- Animation
-    AnimationSpeed = 0.3,
-    AnimationStyle = Enum.EasingStyle.Quart,
-    AnimationDirection = Enum.EasingDirection.Out,
-    
-    -- Effects
-    EnableFlashEffect = true,
-    DamageFlashColor = Color3.fromRGB(255, 0, 0),
-    HealFlashColor = Color3.fromRGB(0, 255, 100),
-    FlashDuration = 0.15,
+local CONFIG = {
+	HealthBarColor = Color3.fromRGB(180, 0, 255),
+	HealthBarWidth = 3,
+	HealthBarGap = 2,
+	Side = "Left",
+	OffsetX = 0,
+	OffsetY = 0,
+	ShowSelfHealthBar = false,
+	
+	Enabled = false,
+	ToggleKey = Enum.KeyCode.E,
+	
+	EnableTeamCheck = false,
+	ShowEnemyOnly = false,
+	ShowAlliedOnly = false,
+	
+	UseTeamColors = false,
+	UseActualTeamColors = true,
+	EnemyHealthBarColor = Color3.fromRGB(180, 0, 255),
+	AlliedHealthBarColor = Color3.fromRGB(0, 255, 0),
+	NoTeamColor = Color3.fromRGB(255, 255, 255),
+	
+	AnimationSpeed = 0.3,
+	AnimationStyle = Enum.EasingStyle.Quart,
+	AnimationDirection = Enum.EasingDirection.Out,
+	
+	EnableFlashEffect = true,
+	DamageFlashColor = Color3.fromRGB(255, 0, 0),
+	HealFlashColor = Color3.fromRGB(0, 255, 100),
+	FlashDuration = 0.15,
 }
 
--- ===== STATE =====
-HealthBar_API.STATE = {
-    healthBars = {},
-}
+local playerGui = player:WaitForChild("PlayerGui")
+local mainScreenGui = Instance.new("ScreenGui")
+mainScreenGui.Name = "HealthBarESP"
+mainScreenGui.ResetOnSpawn = false
+mainScreenGui.IgnoreGuiInset = true
+mainScreenGui.Parent = playerGui
 
--- ===== HELPER FUNCTIONS =====
-function HealthBar_API:GetCharacter(player)
-    return player and player.Character
+local healthBars = {}
+
+--=============================================================================
+-- UTILITY FUNCTIONS
+--=============================================================================
+
+local function gameHasTeams()
+	local teams = game:GetService("Teams")
+	if not teams then return false end
+	return #teams:GetTeams() > 0
 end
 
-function HealthBar_API:GetCharacterPart(player, partName)
-    local char = self:GetCharacter(player)
-    return char and char:FindFirstChild(partName)
+local function getPlayerTeamColor(targetPlayer)
+	if not targetPlayer then return nil end
+	if not targetPlayer.Team then return nil end
+	return targetPlayer.Team.TeamColor.Color
 end
 
-function HealthBar_API:GetHumanoid(player)
-    local char = self:GetCharacter(player)
-    return char and (char:FindFirstChild("Humanoid") or char:FindFirstChildOfClass("Humanoid"))
+local function isEnemy(targetPlayer)
+	if not targetPlayer then return true end
+	if not targetPlayer.Character then return true end
+	
+	if not gameHasTeams() then return true end
+	
+	if not player.Team then
+		if not targetPlayer.Team then return false end
+		return true
+	end
+	
+	if not targetPlayer.Team then return true end
+	
+	return player.Team ~= targetPlayer.Team
 end
 
-function HealthBar_API:IsPlayerAlive(player)
-    if not self:GetCharacter(player) or not self:GetCharacterPart(player, "HumanoidRootPart") then
-        return false
-    end
-    
-    local humanoid = self:GetHumanoid(player)
-    if not humanoid or humanoid.Health <= 0 then
-        return false
-    end
-    
-    return true
+local function shouldShowPlayer(targetPlayer)
+	if not CONFIG.EnableTeamCheck then return true end
+	local isEnemyPlayer = isEnemy(targetPlayer)
+	if CONFIG.ShowEnemyOnly and not isEnemyPlayer then return false end
+	if CONFIG.ShowAlliedOnly and isEnemyPlayer then return false end
+	return true
 end
 
--- ===== TEAM FUNCTIONS =====
-function HealthBar_API:GameHasTeams()
-    local teams = game:GetService("Teams")
-    if not teams then return false end
-    return #teams:GetTeams() > 0
+local function getBoxBounds(targetPlayer)
+	if not targetPlayer then return nil end
+	if not targetPlayer.Character then return nil end
+	
+	local humanoidRootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+	if not humanoidRootPart then return nil end
+	
+	local humanoid = targetPlayer.Character:FindFirstChild("Humanoid")
+	if not humanoid or humanoid.Health <= 0 then return nil end
+	
+	local charSize = targetPlayer.Character:GetExtentsSize()
+	
+	local boxHeight = charSize.Y * 0.8
+	local boxWidth = charSize.X * 0.8
+	
+	local headTop = humanoidRootPart.Position + Vector3.new(0, charSize.Y / 2, 0)
+	local feetBottom = humanoidRootPart.Position - Vector3.new(0, charSize.Y / 1.4, 0)
+	
+	local headScreenPos, headOnScreen = camera:WorldToScreenPoint(headTop)
+	local feetScreenPos, feetOnScreen = camera:WorldToScreenPoint(feetBottom)
+	
+	if headScreenPos.Z <= 0 or not headOnScreen then
+		return nil
+	end
+	
+	local screenX = (headScreenPos.X + feetScreenPos.X) / 2
+	local screenYTop = headScreenPos.Y
+	
+	local displayHeight = math.abs(feetScreenPos.Y - headScreenPos.Y)
+	local displayWidth = displayHeight * (boxWidth / boxHeight)
+	
+	if displayHeight <= 0 or displayWidth <= 0 then
+		return nil
+	end
+	
+	return {
+		X = screenX - displayWidth / 2,
+		Y = screenYTop,
+		Width = displayWidth,
+		Height = displayHeight,
+		Visible = true
+	}
 end
 
-function HealthBar_API:GetPlayerTeamColor(targetPlayer)
-    if not targetPlayer or not targetPlayer.Team then return nil end
-    return targetPlayer.Team.TeamColor.Color
+local function createFlashEffect(barData, isDamage)
+	if not CONFIG.EnableFlashEffect then return end
+	if not barData or not barData.FlashOverlay then return end
+	
+	local flashColor = isDamage and CONFIG.DamageFlashColor or CONFIG.HealFlashColor
+	barData.FlashOverlay.BackgroundColor3 = flashColor
+	barData.FlashOverlay.BackgroundTransparency = 0.3
+	
+	local flashTween = TweenService:Create(
+		barData.FlashOverlay,
+		TweenInfo.new(CONFIG.FlashDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{BackgroundTransparency = 1}
+	)
+	flashTween:Play()
 end
 
-function HealthBar_API:IsEnemy(targetPlayer)
-    if not targetPlayer or not self:GetCharacter(targetPlayer) then return true end
-    
-    if not self:GameHasTeams() then return true end
-    
-    if not LocalPlayer.Team then
-        return not (targetPlayer.Team == nil)
-    end
-    
-    if not targetPlayer.Team then return true end
-    
-    return LocalPlayer.Team ~= targetPlayer.Team
+local function animateHealthBar(barData, targetPercent, targetColor, isDamage)
+	if not barData or not barData.HealthBar then return end
+	
+	if barData.LastHealth and barData.LastHealth ~= targetPercent then
+		createFlashEffect(barData, isDamage)
+	end
+	barData.LastHealth = targetPercent
+	
+	if barData.CurrentTween then
+		barData.CurrentTween:Cancel()
+	end
+	
+	local tweenInfo = TweenInfo.new(
+		CONFIG.AnimationSpeed,
+		CONFIG.AnimationStyle,
+		CONFIG.AnimationDirection
+	)
+	
+	local sizeTween = TweenService:Create(
+		barData.HealthBar,
+		tweenInfo,
+		{
+			Size = UDim2.new(1, 0, targetPercent, 0),
+			Position = UDim2.new(0, 0, 1 - targetPercent, 0)
+		}
+	)
+	
+	local colorTween = TweenService:Create(
+		barData.HealthBar,
+		tweenInfo,
+		{BackgroundColor3 = targetColor}
+	)
+	
+	sizeTween:Play()
+	colorTween:Play()
+	
+	barData.CurrentTween = sizeTween
+	
+	if isDamage and barData.DamageTrail then
+		task.delay(0.1, function()
+			if barData.DamageTrail then
+				local trailTween = TweenService:Create(
+					barData.DamageTrail,
+					TweenInfo.new(CONFIG.AnimationSpeed * 1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+					{
+						Size = UDim2.new(1, 0, targetPercent, 0),
+						Position = UDim2.new(0, 0, 1 - targetPercent, 0)
+					}
+				)
+				trailTween:Play()
+			end
+		end)
+	elseif barData.DamageTrail then
+		barData.DamageTrail.Size = UDim2.new(1, 0, targetPercent, 0)
+		barData.DamageTrail.Position = UDim2.new(0, 0, 1 - targetPercent, 0)
+	end
 end
 
-function HealthBar_API:ShouldShowPlayer(targetPlayer)
-    if not self.CONFIG.EnableTeamCheck then return true end
-    
-    local isEnemyPlayer = self:IsEnemy(targetPlayer)
-    if self.CONFIG.ShowEnemyOnly and not isEnemyPlayer then return false end
-    if self.CONFIG.ShowAlliedOnly and isEnemyPlayer then return false end
-    
-    return true
+local function getHealthGradientColor(healthPercent)
+	if healthPercent > 0.5 then
+		local t = (healthPercent - 0.5) * 2
+		return Color3.fromRGB(
+			math.floor(255 * (1 - t)),
+			255,
+			0
+		)
+	else
+		local t = healthPercent * 2
+		return Color3.fromRGB(
+			255,
+			math.floor(255 * t),
+			0
+		)
+	end
 end
 
--- ===== COLOR FUNCTIONS =====
-function HealthBar_API:GetHealthGradientColor(healthPercent)
-    if healthPercent > 0.5 then
-        local t = (healthPercent - 0.5) * 2
-        return Color3.fromRGB(
-            math.floor(255 * (1 - t)),
-            255,
-            0
-        )
-    else
-        local t = healthPercent * 2
-        return Color3.fromRGB(
-            255,
-            math.floor(255 * t),
-            0
-        )
-    end
+local function getBarColor(targetPlayer, healthPercent, isSelf)
+	if not CONFIG.UseTeamColors then
+		return getHealthGradientColor(healthPercent)
+	end
+	
+	if CONFIG.UseActualTeamColors then
+		local teamColor = getPlayerTeamColor(targetPlayer)
+		if teamColor then
+			return teamColor
+		else
+			if isSelf then
+				return getHealthGradientColor(healthPercent)
+			end
+			return CONFIG.NoTeamColor
+		end
+	else
+		if isSelf then
+			return CONFIG.AlliedHealthBarColor
+		end
+		
+		local isEnemyPlayer = isEnemy(targetPlayer)
+		if isEnemyPlayer then
+			return CONFIG.EnemyHealthBarColor
+		else
+			return CONFIG.AlliedHealthBarColor
+		end
+	end
 end
 
-function HealthBar_API:GetBarColor(targetPlayer, healthPercent, isSelf)
-    if not self.CONFIG.UseTeamColors then
-        return self:GetHealthGradientColor(healthPercent)
-    end
-    
-    if self.CONFIG.UseActualTeamColors then
-        local teamColor = self:GetPlayerTeamColor(targetPlayer)
-        if teamColor then
-            return teamColor
-        else
-            return isSelf and self:GetHealthGradientColor(healthPercent) or self.CONFIG.NoTeamColor
-        end
-    else
-        if isSelf then
-            return self.CONFIG.AlliedHealthBarColor
-        end
-        
-        local isEnemyPlayer = self:IsEnemy(targetPlayer)
-        return isEnemyPlayer and self.CONFIG.EnemyHealthBarColor or self.CONFIG.AlliedHealthBarColor
-    end
+--=============================================================================
+-- HEALTH BAR CREATION & MANAGEMENT
+--=============================================================================
+
+local function createHealthBar(targetPlayer)
+	if healthBars[targetPlayer] then return end
+	
+	local OutlineBar = Instance.new("Frame")
+	OutlineBar.Name = "HealthBar_" .. targetPlayer.Name
+	OutlineBar.Size = UDim2.new(0, CONFIG.HealthBarWidth, 0, 100)
+	OutlineBar.Position = UDim2.new(0, 0, 0, 0)
+	OutlineBar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	OutlineBar.BackgroundTransparency = 0.3
+	OutlineBar.BorderSizePixel = 0
+	OutlineBar.AnchorPoint = Vector2.new(0, 0)
+	OutlineBar.Visible = false
+	OutlineBar.Parent = mainScreenGui
+	
+	local OutlineStroke = Instance.new("UIStroke")
+	OutlineStroke.Thickness = 1
+	OutlineStroke.Color = Color3.fromRGB(0, 0, 0)
+	OutlineStroke.LineJoinMode = Enum.LineJoinMode.Miter
+	OutlineStroke.Parent = OutlineBar
+	
+	local DamageTrail = Instance.new("Frame")
+	DamageTrail.Name = "DamageTrail"
+	DamageTrail.Size = UDim2.new(1, 0, 1, 0)
+	DamageTrail.Position = UDim2.new(0, 0, 0, 0)
+	DamageTrail.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+	DamageTrail.BackgroundTransparency = 0.3
+	DamageTrail.BorderSizePixel = 0
+	DamageTrail.ZIndex = 1
+	DamageTrail.Parent = OutlineBar
+	
+	local HealthBar = Instance.new("Frame")
+	HealthBar.Name = "HealthBar"
+	HealthBar.Size = UDim2.new(1, 0, 1, 0)
+	HealthBar.Position = UDim2.new(0, 0, 0, 0)
+	HealthBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+	HealthBar.BorderSizePixel = 0
+	HealthBar.ZIndex = 2
+	HealthBar.Parent = OutlineBar
+	
+	local FlashOverlay = Instance.new("Frame")
+	FlashOverlay.Name = "FlashOverlay"
+	FlashOverlay.Size = UDim2.new(1, 0, 1, 0)
+	FlashOverlay.Position = UDim2.new(0, 0, 0, 0)
+	FlashOverlay.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	FlashOverlay.BackgroundTransparency = 1
+	FlashOverlay.BorderSizePixel = 0
+	FlashOverlay.ZIndex = 3
+	FlashOverlay.Parent = OutlineBar
+	
+	healthBars[targetPlayer] = {
+		OutlineBar = OutlineBar,
+		HealthBar = HealthBar,
+		DamageTrail = DamageTrail,
+		FlashOverlay = FlashOverlay,
+		IsSelf = false,
+		LastHealth = 1,
+		CurrentTween = nil
+	}
 end
 
--- ===== POSITION CALCULATION =====
-function HealthBar_API:GetBoxBounds(targetPlayer)
-    if not targetPlayer or not self:GetCharacter(targetPlayer) then return nil end
-    
-    local humanoidRootPart = self:GetCharacterPart(targetPlayer, "HumanoidRootPart")
-    if not humanoidRootPart then return nil end
-    
-    local humanoid = self:GetHumanoid(targetPlayer)
-    if not humanoid or humanoid.Health <= 0 then return nil end
-    
-    local charSize = self:GetCharacter(targetPlayer):GetExtentsSize()
-    
-    local boxHeight = charSize.Y * 0.8
-    local boxWidth = charSize.X * 0.8
-    
-    local headTop = humanoidRootPart.Position + Vector3.new(0, charSize.Y / 2, 0)
-    local feetBottom = humanoidRootPart.Position - Vector3.new(0, charSize.Y / 1.4, 0)
-    
-    local headScreenPos = Camera:WorldToScreenPoint(headTop)
-    local feetScreenPos = Camera:WorldToScreenPoint(feetBottom)
-    
-    if headScreenPos.Z <= 0 then return nil end
-    
-    local screenX = (headScreenPos.X + feetScreenPos.X) / 2
-    local screenYTop = headScreenPos.Y
-    
-    local displayHeight = math.abs(feetScreenPos.Y - headScreenPos.Y)
-    local displayWidth = displayHeight * (boxWidth / boxHeight)
-    
-    if displayHeight <= 0 or displayWidth <= 0 then return nil end
-    
-    return {
-        X = screenX - displayWidth / 2,
-        Y = screenYTop,
-        Width = displayWidth,
-        Height = displayHeight,
-        Visible = true
-    }
+local function createSelfHealthBar()
+	if not player.Character then return end
+	if healthBars[player] then return end
+	
+	local OutlineBar = Instance.new("Frame")
+	OutlineBar.Name = "SelfHealthBar"
+	OutlineBar.Size = UDim2.new(0, CONFIG.HealthBarWidth, 0, 100)
+	OutlineBar.Position = UDim2.new(0, 0, 0, 0)
+	OutlineBar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	OutlineBar.BackgroundTransparency = 0.3
+	OutlineBar.BorderSizePixel = 0
+	OutlineBar.AnchorPoint = Vector2.new(0, 0)
+	OutlineBar.Visible = false
+	OutlineBar.Parent = mainScreenGui
+	
+	local OutlineStroke = Instance.new("UIStroke")
+	OutlineStroke.Thickness = 1
+	OutlineStroke.Color = Color3.fromRGB(0, 0, 0)
+	OutlineStroke.LineJoinMode = Enum.LineJoinMode.Miter
+	OutlineStroke.Parent = OutlineBar
+	
+	local DamageTrail = Instance.new("Frame")
+	DamageTrail.Name = "DamageTrail"
+	DamageTrail.Size = UDim2.new(1, 0, 1, 0)
+	DamageTrail.Position = UDim2.new(0, 0, 0, 0)
+	DamageTrail.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+	DamageTrail.BackgroundTransparency = 0.3
+	DamageTrail.BorderSizePixel = 0
+	DamageTrail.ZIndex = 1
+	DamageTrail.Parent = OutlineBar
+	
+	local HealthBar = Instance.new("Frame")
+	HealthBar.Name = "HealthBar"
+	HealthBar.Size = UDim2.new(1, 0, 1, 0)
+	HealthBar.Position = UDim2.new(0, 0, 0, 0)
+	HealthBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+	HealthBar.BorderSizePixel = 0
+	HealthBar.ZIndex = 2
+	HealthBar.Parent = OutlineBar
+	
+	local FlashOverlay = Instance.new("Frame")
+	FlashOverlay.Name = "FlashOverlay"
+	FlashOverlay.Size = UDim2.new(1, 0, 1, 0)
+	FlashOverlay.Position = UDim2.new(0, 0, 0, 0)
+	FlashOverlay.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	FlashOverlay.BackgroundTransparency = 1
+	FlashOverlay.BorderSizePixel = 0
+	FlashOverlay.ZIndex = 3
+	FlashOverlay.Parent = OutlineBar
+	
+	healthBars[player] = {
+		OutlineBar = OutlineBar,
+		HealthBar = HealthBar,
+		DamageTrail = DamageTrail,
+		FlashOverlay = FlashOverlay,
+		IsSelf = true,
+		LastHealth = 1,
+		CurrentTween = nil
+	}
 end
 
--- ===== ANIMATION FUNCTIONS =====
-function HealthBar_API:CreateFlashEffect(barData, isDamage)
-    if not self.CONFIG.EnableFlashEffect or not barData or not barData.FlashOverlay then return end
-    
-    local flashColor = isDamage and self.CONFIG.DamageFlashColor or self.CONFIG.HealFlashColor
-    barData.FlashOverlay.BackgroundColor3 = flashColor
-    barData.FlashOverlay.BackgroundTransparency = 0.3
-    
-    local flashTween = TweenService:Create(
-        barData.FlashOverlay,
-        TweenInfo.new(self.CONFIG.FlashDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-        {BackgroundTransparency = 1}
-    )
-    flashTween:Play()
+local function updateHealthBar(targetPlayer, barData)
+	if not barData then return end
+	if not barData.OutlineBar then return end
+	if not barData.OutlineBar.Parent then return end
+	
+	if not CONFIG.Enabled then
+		barData.OutlineBar.Visible = false
+		return
+	end
+	
+	if not targetPlayer then
+		barData.OutlineBar.Visible = false
+		return
+	end
+	
+	if not targetPlayer.Parent then
+		barData.OutlineBar.Visible = false
+		return
+	end
+	
+	local character = targetPlayer.Character
+	if not character then
+		barData.OutlineBar.Visible = false
+		return
+	end
+	
+	local humanoid = character:FindFirstChild("Humanoid")
+	if not humanoid then
+		barData.OutlineBar.Visible = false
+		return
+	end
+	
+	if humanoid.Health <= 0 then
+		barData.OutlineBar.Visible = false
+		return
+	end
+	
+	if not barData.IsSelf and not shouldShowPlayer(targetPlayer) then
+		barData.OutlineBar.Visible = false
+		return
+	end
+	
+	local boxBounds = getBoxBounds(targetPlayer)
+	if not boxBounds then
+		barData.OutlineBar.Visible = false
+		return
+	end
+	
+	local healthBarX
+	if CONFIG.Side == "Left" then
+		healthBarX = boxBounds.X - CONFIG.HealthBarWidth - CONFIG.HealthBarGap
+	else
+		healthBarX = boxBounds.X + boxBounds.Width + CONFIG.HealthBarGap
+	end
+	
+	healthBarX = healthBarX + CONFIG.OffsetX
+	local healthBarY = boxBounds.Y + CONFIG.OffsetY
+	
+	barData.OutlineBar.Size = UDim2.new(0, CONFIG.HealthBarWidth, 0, boxBounds.Height)
+	barData.OutlineBar.Position = UDim2.new(0, healthBarX, 0, healthBarY)
+	
+	local healthPercent = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
+	
+	local barColor = getBarColor(targetPlayer, healthPercent, barData.IsSelf)
+	
+	local isDamage = barData.LastHealth and healthPercent < barData.LastHealth
+	
+	if barData.LastHealth ~= healthPercent then
+		animateHealthBar(barData, healthPercent, barColor, isDamage)
+	else
+		barData.HealthBar.BackgroundColor3 = barColor
+	end
+	
+	local screenSize = mainScreenGui.AbsoluteSize
+	local isOnScreen = healthBarX > -50 and healthBarX < screenSize.X + 50 and healthBarY > -50 and healthBarY < screenSize.Y + 50
+	
+	barData.OutlineBar.Visible = isOnScreen
 end
 
-function HealthBar_API:AnimateHealthBar(barData, targetPercent, targetColor, isDamage)
-    if not barData or not barData.HealthBar then return end
-    
-    if barData.LastHealth and barData.LastHealth ~= targetPercent then
-        self:CreateFlashEffect(barData, isDamage)
-    end
-    barData.LastHealth = targetPercent
-    
-    if barData.CurrentTween then
-        barData.CurrentTween:Cancel()
-    end
-    
-    local tweenInfo = TweenInfo.new(
-        self.CONFIG.AnimationSpeed,
-        self.CONFIG.AnimationStyle,
-        self.CONFIG.AnimationDirection
-    )
-    
-    local sizeTween = TweenService:Create(
-        barData.HealthBar,
-        tweenInfo,
-        {
-            Size = UDim2.new(1, 0, targetPercent, 0),
-            Position = UDim2.new(0, 0, 1 - targetPercent, 0)
-        }
-    )
-    
-    local colorTween = TweenService:Create(
-        barData.HealthBar,
-        tweenInfo,
-        {BackgroundColor3 = targetColor}
-    )
-    
-    sizeTween:Play()
-    colorTween:Play()
-    
-    barData.CurrentTween = sizeTween
-    
-    if isDamage and barData.DamageTrail then
-        task.delay(0.1, function()
-            if barData.DamageTrail then
-                local trailTween = TweenService:Create(
-                    barData.DamageTrail,
-                    TweenInfo.new(self.CONFIG.AnimationSpeed * 1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                    {
-                        Size = UDim2.new(1, 0, targetPercent, 0),
-                        Position = UDim2.new(0, 0, 1 - targetPercent, 0)
-                    }
-                )
-                trailTween:Play()
-            end
-        end)
-    elseif barData.DamageTrail then
-        barData.DamageTrail.Size = UDim2.new(1, 0, targetPercent, 0)
-        barData.DamageTrail.Position = UDim2.new(0, 0, 1 - targetPercent, 0)
-    end
+local function removeHealthBar(targetPlayer)
+	if healthBars[targetPlayer] then
+		if healthBars[targetPlayer].CurrentTween then
+			healthBars[targetPlayer].CurrentTween:Cancel()
+		end
+		if healthBars[targetPlayer].OutlineBar then
+			healthBars[targetPlayer].OutlineBar:Destroy()
+		end
+		healthBars[targetPlayer] = nil
+	end
 end
 
--- ===== HEALTH BAR ELEMENT FUNCTIONS =====
-function HealthBar_API:CreateHealthBarFrame(parent, targetPlayer)
-    local OutlineBar = Instance.new("Frame")
-    OutlineBar.Name = "HealthBar_" .. targetPlayer.Name
-    OutlineBar.Size = UDim2.new(0, self.CONFIG.HealthBarWidth, 0, 100)
-    OutlineBar.Position = UDim2.new(0, 0, 0, 0)
-    OutlineBar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    OutlineBar.BackgroundTransparency = 0.3
-    OutlineBar.BorderSizePixel = 0
-    OutlineBar.AnchorPoint = Vector2.new(0, 0)
-    OutlineBar.Visible = false
-    OutlineBar.Parent = parent
-    
-    local OutlineStroke = Instance.new("UIStroke")
-    OutlineStroke.Thickness = 1
-    OutlineStroke.Color = Color3.fromRGB(0, 0, 0)
-    OutlineStroke.LineJoinMode = Enum.LineJoinMode.Miter
-    OutlineStroke.Parent = OutlineBar
-    
-    local DamageTrail = Instance.new("Frame")
-    DamageTrail.Name = "DamageTrail"
-    DamageTrail.Size = UDim2.new(1, 0, 1, 0)
-    DamageTrail.Position = UDim2.new(0, 0, 0, 0)
-    DamageTrail.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
-    DamageTrail.BackgroundTransparency = 0.3
-    DamageTrail.BorderSizePixel = 0
-    DamageTrail.ZIndex = 1
-    DamageTrail.Parent = OutlineBar
-    
-    local HealthBar = Instance.new("Frame")
-    HealthBar.Name = "HealthBar"
-    HealthBar.Size = UDim2.new(1, 0, 1, 0)
-    HealthBar.Position = UDim2.new(0, 0, 0, 0)
-    HealthBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-    HealthBar.BorderSizePixel = 0
-    HealthBar.ZIndex = 2
-    HealthBar.Parent = OutlineBar
-    
-    local FlashOverlay = Instance.new("Frame")
-    FlashOverlay.Name = "FlashOverlay"
-    FlashOverlay.Size = UDim2.new(1, 0, 1, 0)
-    FlashOverlay.Position = UDim2.new(0, 0, 0, 0)
-    FlashOverlay.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    FlashOverlay.BackgroundTransparency = 1
-    FlashOverlay.BorderSizePixel = 0
-    FlashOverlay.ZIndex = 3
-    FlashOverlay.Parent = OutlineBar
-    
-    return {
-        OutlineBar = OutlineBar,
-        HealthBar = HealthBar,
-        DamageTrail = DamageTrail,
-        FlashOverlay = FlashOverlay,
-        IsSelf = false,
-        LastHealth = 1,
-        CurrentTween = nil
-    }
+local function updateAllHealthBars()
+	for targetPlayer, barData in pairs(healthBars) do
+		if targetPlayer and targetPlayer.Parent and barData then
+			if targetPlayer == player then
+				if CONFIG.ShowSelfHealthBar then
+					updateHealthBar(targetPlayer, barData)
+				else
+					if barData.OutlineBar then
+						barData.OutlineBar.Visible = false
+					end
+				end
+			else
+				updateHealthBar(targetPlayer, barData)
+			end
+		else
+			removeHealthBar(targetPlayer)
+		end
+	end
 end
 
-function HealthBar_API:CreateHealthBar(parent, targetPlayer)
-    if self.STATE.healthBars[targetPlayer] then return end
-    self.STATE.healthBars[targetPlayer] = self:CreateHealthBarFrame(parent, targetPlayer)
+--=============================================================================
+-- EVENT HANDLERS
+--=============================================================================
+
+local function onPlayerAdded(newPlayer)
+	if newPlayer ~= player then
+		task.wait(0.5)
+		createHealthBar(newPlayer)
+	end
 end
 
-function HealthBar_API:CreateSelfHealthBar(parent)
-    if self.STATE.healthBars[LocalPlayer] then return end
-    local barData = self:CreateHealthBarFrame(parent, LocalPlayer)
-    barData.IsSelf = true
-    self.STATE.healthBars[LocalPlayer] = barData
+local function onPlayerRemoving(leavingPlayer)
+	removeHealthBar(leavingPlayer)
 end
 
-function HealthBar_API:UpdateHealthBar(targetPlayer, barData, screenGui)
-    if not barData or not barData.OutlineBar or not barData.OutlineBar.Parent then return end
-    
-    if not self.CONFIG.Enabled then
-        barData.OutlineBar.Visible = false
-        return
-    end
-    
-    if not targetPlayer or not targetPlayer.Parent or not self:IsPlayerAlive(targetPlayer) then
-        barData.OutlineBar.Visible = false
-        return
-    end
-    
-    if not barData.IsSelf and not self:ShouldShowPlayer(targetPlayer) then
-        barData.OutlineBar.Visible = false
-        return
-    end
-    
-    local boxBounds = self:GetBoxBounds(targetPlayer)
-    if not boxBounds then
-        barData.OutlineBar.Visible = false
-        return
-    end
-    
-    local healthBarX = self.CONFIG.Side == "Left" 
-        and (boxBounds.X - self.CONFIG.HealthBarWidth - self.CONFIG.HealthBarGap)
-        or (boxBounds.X + boxBounds.Width + self.CONFIG.HealthBarGap)
-    
-    healthBarX = healthBarX + self.CONFIG.OffsetX
-    local healthBarY = boxBounds.Y + self.CONFIG.OffsetY
-    
-    barData.OutlineBar.Size = UDim2.new(0, self.CONFIG.HealthBarWidth, 0, boxBounds.Height)
-    barData.OutlineBar.Position = UDim2.new(0, healthBarX, 0, healthBarY)
-    
-    local humanoid = self:GetHumanoid(targetPlayer)
-    local healthPercent = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
-    local barColor = self:GetBarColor(targetPlayer, healthPercent, barData.IsSelf)
-    local isDamage = barData.LastHealth and healthPercent < barData.LastHealth
-    
-    if barData.LastHealth ~= healthPercent then
-        self:AnimateHealthBar(barData, healthPercent, barColor, isDamage)
-    else
-        barData.HealthBar.BackgroundColor3 = barColor
-    end
-    
-    local screenSize = screenGui.AbsoluteSize
-    local isOnScreen = healthBarX > -50 and healthBarX < screenSize.X + 50 and healthBarY > -50 and healthBarY < screenSize.Y + 50
-    barData.OutlineBar.Visible = isOnScreen
+--=============================================================================
+-- INITIALIZATION
+--=============================================================================
+
+createSelfHealthBar()
+player.CharacterAdded:Connect(function()
+	task.wait(0.5)
+	if healthBars[player] then
+		if healthBars[player].CurrentTween then
+			healthBars[player].CurrentTween:Cancel()
+		end
+		if healthBars[player].OutlineBar then
+			healthBars[player].OutlineBar:Destroy()
+		end
+	end
+	healthBars[player] = nil
+	createSelfHealthBar()
+end)
+
+Players.PlayerAdded:Connect(onPlayerAdded)
+Players.PlayerRemoving:Connect(onPlayerRemoving)
+
+for _, otherPlayer in pairs(Players:GetPlayers()) do
+	if otherPlayer ~= player then
+		onPlayerAdded(otherPlayer)
+	end
 end
 
-function HealthBar_API:RemoveHealthBar(targetPlayer)
-    if self.STATE.healthBars[targetPlayer] then
-        local barData = self.STATE.healthBars[targetPlayer]
-        if barData.CurrentTween then
-            barData.CurrentTween:Cancel()
-        end
-        if barData.OutlineBar then
-            barData.OutlineBar:Destroy()
-        end
-        self.STATE.healthBars[targetPlayer] = nil
-    end
+RunService.RenderStepped:Connect(function()
+	updateAllHealthBars()
+end)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	
+	if input.KeyCode == CONFIG.ToggleKey then
+		CONFIG.Enabled = not CONFIG.Enabled
+	end
+end)
+
+--=============================================================================
+-- PUBLIC API
+--=============================================================================
+
+local HealthBarESPAPI = {}
+
+function HealthBarESPAPI:UpdateConfig(newConfig)
+	for key, value in pairs(newConfig) do
+		if CONFIG[key] ~= nil then
+			CONFIG[key] = value
+		end
+	end
 end
 
-return HealthBar_API
+function HealthBarESPAPI:GetConfig()
+	return CONFIG
+end
+
+function HealthBarESPAPI:Toggle(state)
+	CONFIG.Enabled = state
+end
+
+function HealthBarESPAPI:Destroy()
+	for targetPlayer in pairs(healthBars) do
+		removeHealthBar(targetPlayer)
+	end
+	mainScreenGui:Destroy()
+end
+
+return HealthBarESPAPI
