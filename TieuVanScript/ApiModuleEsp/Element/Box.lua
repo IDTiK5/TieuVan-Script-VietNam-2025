@@ -1,302 +1,242 @@
-return function(boxTab, ESP)
-	boxTab:Toggle({
-		Name = "Bật ESP",
-		Flag = "ESP_Enabled",
-		Default = false,
-		Callback = function(value)
-			ESP.config.enabled = value
-		end
-	})
+--[[
+    BoxESP UI Module
+    Handles all UI callbacks and integrations
+    GitHub Ready
+]]
 
-	boxTab:Dropdown({
-		Name = "Kiểu hộp",
-		Flag = "BoxType",
-		Items = {"Hộp 2D", "Hộp 3D", "Hộp góc"},
-		Default = "Hộp 2D",
-		Callback = function(value)
-			if value == "Hộp 2D" then
-				ESP.config.box3D = false
-				ESP.config.cornerBox = false
-			elseif value == "Hộp 3D" then
-				ESP.config.box3D = true
-				ESP.config.cornerBox = false
-			elseif value == "Hộp góc" then
-				ESP.config.box3D = false
-				ESP.config.cornerBox = true
-			end
-			ESP:ForceResort()
-		end
-	})
+local BoxESP_UI = {}
 
-	boxTab:ColorPicker({
-		Name = "Màu hộp",
-		Flag = "BoxColor",
-		Color = Color3.fromRGB(255, 255, 255),
-		Callback = function(color)
-			ESP.config.boxColor = color
-		end
-	})
+function BoxESP_UI:CreateUI(Section, API)
+    local CONFIG = API.CONFIG
+    
+    -- ===== MAIN SETTINGS =====
+    Section:Toggle({
+        Name = "Enable Box ESP",
+        Flag = "BoxESPToggle",
+        Default = false,
+        Callback = function(Value)
+            CONFIG.Enabled = Value
+        end
+    })
 
-	boxTab:Slider({
-		Name = "Khoảng cách tối đa",
-		Flag = "MaxDistance",
-		Min = 0,
-		Max = 10000,
-		Default = 10000,
-		Callback = function(value)
-			ESP.config.maxDistance = value
-		end
-	})
+    Section:Toggle({
+        Name = "Show Self Box",
+        Flag = "ShowSelfBox",
+        Default = false,
+        Callback = function(Value)
+            CONFIG.ShowSelfBox = Value
+        end
+    })
 
-	boxTab:Toggle({
-		Name = "Tô màu hộp",
-		Flag = "BoxFilled",
-		Default = false,
-		Callback = function(value)
-			ESP.config.boxFilled = value
-		end
-	})
+    -- ===== BOX STYLING =====
+    Section:Toggle({
+        Name = "Inner Border",
+        Flag = "InnerBorder",
+        Default = false,
+        Callback = function(Value)
+            CONFIG.ShowInnerBorder = Value
+        end
+    })
 
-	boxTab:Toggle({
-		Name = "Viền hộp",
-		Flag = "BoxOutline",
-		Default = false,
-		Callback = function(value)
-			ESP.config.boxOutline = value
-		end
-	})
+    Section:Slider({
+        Name = "Box Thickness",
+        Flag = "BoxThickness",
+        Min = 0.1,
+        Max = 3,
+        Default = 0.5,
+        Decimals = 0.1,
+        Suffix = "px",
+        Callback = function(Value)
+            CONFIG.BoxThickness = Value
+            API:UpdateAllThickness()
+        end
+    })
 
-	boxTab:Toggle({
-		Name = "Kiểm tra tường",
-		Flag = "RaycastCheck",
-		Default = false,
-		Callback = function(value)
-			ESP.config.raycastCheck = value
-		end
-	})
+    Section:Slider({
+        Name = "Inner Thickness",
+        Flag = "InnerThickness",
+        Min = 0.1,
+        Max = 3,
+        Default = 0.5,
+        Decimals = 0.1,
+        Suffix = "px",
+        Callback = function(Value)
+            CONFIG.InnerThickness = Value
+            API:UpdateAllThickness()
+        end
+    })
 
-	boxTab:Toggle({
-		Name = "Mờ khi bị chắn",
-		Flag = "FadeBlocked",
-		Default = false,
-		Callback = function(value)
-			ESP.config.fadeWhenBlocked = value
-		end
-	})
+    Section:Label("Box Color"):Colorpicker({
+        Name = "Box Color",
+        Flag = "BoxColor",
+        Default = Color3.fromRGB(255, 255, 255),
+        Callback = function(Value)
+            CONFIG.BoxColor = Value
+        end
+    })
 
-	boxTab:Toggle({
-		Name = "Mờ theo khoảng cách",
-		Flag = "DistanceFade",
-		Default = false,
-		Callback = function(value)
-			ESP.config.distanceFade = value
-		end
-	})
+    Section:Label("Self Box Color"):Colorpicker({
+        Name = "Self Box Color",
+        Flag = "SelfBoxColor",
+        Default = Color3.fromRGB(255, 255, 255),
+        Callback = function(Value)
+            CONFIG.SelfBoxColor = Value
+        end
+    })
 
-	boxTab:Toggle({
-		Name = "Lọc đội",
-		Flag = "TeamFilter",
-		Default = true,
-		Callback = function(value)
-			ESP.config.teamFilter = value
-			ESP:Refresh()
-		end
-	})
+    -- ===== TEAM SETTINGS =====
+    Section:Toggle({
+        Name = "Team Check",
+        Flag = "TeamCheck",
+        Default = false,
+        Callback = function(Value)
+            CONFIG.EnableTeamCheck = Value
+        end
+    })
 
-	boxTab:Dropdown({
-		Name = "Chế độ lọc đội",
-		Flag = "TeamFilterMode",
-		Items = {"Tiêu chuẩn", "Nâng cao"},
-		Default = "Tiêu chuẩn",
-		Callback = function(value)
-			if value == "Tiêu chuẩn" then
-				ESP.config.teamFilterMode = "standard"
-			else
-				ESP.config.teamFilterMode = "advanced"
-			end
-			ESP:Refresh()
-		end
-	})
+    Section:Toggle({
+        Name = "Enemy Only",
+        Flag = "EnemyOnly",
+        Default = false,
+        Callback = function(Value)
+            CONFIG.ShowEnemyOnly = Value
+        end
+    })
 
-	boxTab:Dropdown({
-		Name = "Chế độ màu",
-		Flag = "ColorMode",
-		Items = {"Tĩnh", "Cầu vồng", "Máu", "Đội", "Khoảng cách"},
-		Default = "Tĩnh",
-		Callback = function(value)
-			if value == "Tĩnh" then
-				ESP.config.colorMode = "Static"
-			elseif value == "Cầu vồng" then
-				ESP.config.colorMode = "Rainbow"
-			elseif value == "Máu" then
-				ESP.config.colorMode = "Health"
-			elseif value == "Đội" then
-				ESP.config.colorMode = "Team"
-			else
-				ESP.config.colorMode = "Distance"
-			end
-		end
-	})
+    Section:Toggle({
+        Name = "Use Team Colors",
+        Flag = "UseTeamColors",
+        Default = false,
+        Callback = function(Value)
+            CONFIG.UseTeamColors = Value
+        end
+    })
 
-	boxTab:Slider({
-		Name = "Độ dày viền",
-		Flag = "Thickness",
-		Min = 0.5,
-		Max = 5,
-		Default = 1.5,
-		Callback = function(value)
-			ESP.config.thickness = value
-		end
-	})
+    Section:Toggle({
+        Name = "Use Actual Team Colors",
+        Flag = "UseActualTeamColors",
+        Default = true,
+        Callback = function(Value)
+            CONFIG.UseActualTeamColors = Value
+        end
+    })
 
-	boxTab:Slider({
-		Name = "Độ trong suốt",
-		Flag = "Transparency",
-		Min = 0,
-		Max = 1,
-		Default = 1,
-		Callback = function(value)
-			ESP.config.transparency = value
-		end
-	})
+    Section:Label("Enemy Color"):Colorpicker({
+        Name = "Enemy Color",
+        Flag = "EnemyColor",
+        Default = Color3.fromRGB(255, 0, 0),
+        Callback = function(Value)
+            CONFIG.EnemyBoxColor = Value
+        end
+    })
 
-	boxTab:Slider({
-		Name = "Tốc độ cập nhật",
-		Flag = "UpdateRate",
-		Min = 1,
-		Max = 10,
-		Default = 1,
-		Callback = function(value)
-			ESP.config.updateRate = value
-		end
-	})
+    Section:Label("Allied Color"):Colorpicker({
+        Name = "Allied Color",
+        Flag = "AlliedColor",
+        Default = Color3.fromRGB(0, 255, 0),
+        Callback = function(Value)
+            CONFIG.AlliedBoxColor = Value
+        end
+    })
 
-	boxTab:ColorPicker({
-		Name = "Màu viền",
-		Flag = "OutlineColor",
-		Color = Color3.fromRGB(255, 255, 255),
-		Callback = function(color)
-			ESP.config.outlineColor = color
-		end
-	})
+    Section:Label("No Team Color"):Colorpicker({
+        Name = "No Team Color",
+        Flag = "NoTeamColor",
+        Default = Color3.fromRGB(255, 255, 255),
+        Callback = function(Value)
+            CONFIG.NoTeamColor = Value
+        end
+    })
 
-	boxTab:Slider({
-		Name = "Độ dày viền ngoài",
-		Flag = "OutlineThickness",
-		Min = 0.5,
-		Max = 5,
-		Default = 3,
-		Callback = function(value)
-			ESP.config.outlineThickness = value
-		end
-	})
+    -- ===== GRADIENT SETTINGS =====
+    Section:Toggle({
+        Name = "Show Gradient",
+        Flag = "ShowGradient",
+        Default = false,
+        Callback = function(Value)
+            CONFIG.ShowGradient = Value
+        end
+    })
 
-	boxTab:Slider({
-		Name = "Độ dài góc",
-		Flag = "CornerLength",
-		Min = 0.1,
-		Max = 1,
-		Default = 0.25,
-		Callback = function(value)
-			ESP.config.cornerLength = value
-		end
-	})
+    Section:Toggle({
+        Name = "Enable Gradient Animation",
+        Flag = "GradientAnimation",
+        Default = false,
+        Callback = function(Value)
+            CONFIG.EnableGradientAnimation = Value
+            if Value then
+                API:StartGradientAnimation()
+            else
+                API:StopGradientAnimation()
+            end
+        end
+    })
 
-	boxTab:Slider({
-		Name = "Độ mờ tô màu",
-		Flag = "FillTransparency",
-		Min = 0,
-		Max = 1,
-		Default = 0.8,
-		Callback = function(value)
-			ESP.config.fillTransparency = value
-		end
-	})
+    Section:Slider({
+        Name = "Gradient Rotation",
+        Flag = "GradientRotation",
+        Min = 0,
+        Max = 360,
+        Default = 90,
+        Decimals = 1,
+        Suffix = "°",
+        Callback = function(Value)
+            CONFIG.GradientRotation = Value
+            if not CONFIG.EnableGradientAnimation then
+                for _, espData in pairs(API.STATE.espBoxes) do
+                    if espData and espData.UIGradient then
+                        espData.UIGradient.Rotation = Value
+                    end
+                end
+            end
+        end
+    })
 
-	boxTab:Toggle({
-		Name = "Hộp động",
-		Flag = "DynamicBox",
-		Default = false,
-		Callback = function(value)
-			ESP.config.dynamicBox = value
-		end
-	})
+    Section:Slider({
+        Name = "Gradient Animation Speed",
+        Flag = "GradientSpeed",
+        Min = 0.1,
+        Max = 5,
+        Default = 1,
+        Decimals = 0.1,
+        Suffix = "x",
+        Callback = function(Value)
+            CONFIG.GradientAnimationSpeed = Value
+        end
+    })
 
-	boxTab:Slider({
-		Name = "Tốc độ cầu vồng",
-		Flag = "RainbowSpeed",
-		Min = 0.1,
-		Max = 5,
-		Default = 1,
-		Callback = function(value)
-			ESP.config.rainbowSpeed = value
-		end
-	})
+    Section:Slider({
+        Name = "Gradient Transparency",
+        Flag = "GradientTransparency",
+        Min = 0,
+        Max = 1,
+        Default = 0.7,
+        Decimals = 0.01,
+        Callback = function(Value)
+            CONFIG.GradientTransparency = Value
+            API:UpdateAllGradients()
+        end
+    })
 
-	boxTab:Slider({
-		Name = "Số người mỗi khung",
-		Flag = "MaxPlayersPerFrame",
-		Min = 1,
-		Max = 50,
-		Default = 10,
-		Callback = function(value)
-			ESP.config.maxPlayersPerFrame = value
-		end
-	})
+    Section:Label("Gradient Color 1"):Colorpicker({
+        Name = "Gradient Color 1",
+        Flag = "GradientColor1",
+        Default = Color3.fromRGB(255, 86, 0),
+        Callback = function(Value)
+            CONFIG.GradientColor1 = Value
+            API:UpdateAllGradients()
+        end
+    })
 
-	boxTab:Slider({
-		Name = "Thời gian lưu raycast",
-		Flag = "RaycastCacheDuration",
-		Min = 0.05,
-		Max = 1,
-		Default = 0.1,
-		Callback = function(value)
-			ESP.config.raycastCacheDuration = value
-		end
-	})
-
-	boxTab:Slider({
-		Name = "Khoảng thời gian dọn dẹp",
-		Flag = "PoolCleanupInterval",
-		Min = 5,
-		Max = 60,
-		Default = 30,
-		Callback = function(value)
-			ESP.config.poolCleanupInterval = value
-		end
-	})
-
-	boxTab:Toggle({
-		Name = "Khôi phục lỗi tự động",
-		Flag = "ErrorRecovery",
-		Default = true,
-		Callback = function(value)
-			ESP.config.enableErrorRecovery = value
-		end
-	})
-
-	boxTab:Toggle({
-		Name = "Chế độ gỡ lỗi",
-		Flag = "DebugMode",
-		Default = false,
-		Callback = function(value)
-			ESP.config.debugMode = value
-		end
-	})
-
-	boxTab:Button({
-		Name = "Làm mới ESP",
-		Callback = function()
-			ESP:Refresh()
-		end
-	})
-
-	boxTab:Button({
-		Name = "Xóa bộ nhớ đệm",
-		Callback = function()
-			ESP.cache = {}
-			ESP.validationData = {}
-			ESP.validationTime = {}
-		end
-	})
+    Section:Label("Gradient Color 2"):Colorpicker({
+        Name = "Gradient Color 2",
+        Flag = "GradientColor2",
+        Default = Color3.fromRGB(255, 0, 128),
+        Callback = function(Value)
+            CONFIG.GradientColor2 = Value
+            API:UpdateAllGradients()
+        end
+    })
 end
+
+return BoxESP_UI
