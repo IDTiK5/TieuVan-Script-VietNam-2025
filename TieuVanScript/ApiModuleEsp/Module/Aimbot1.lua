@@ -21,14 +21,10 @@ local CONFIG = {
 	LockTarget = false,
 	SwitchKey = Enum.KeyCode.E,
 	FOVColor = Color3.fromRGB(255, 255, 255),
-	AutoFireEnabled = true,
-	FireKey = Enum.UserInputType.MouseButton1,
-	FireRate = 0.1,
 }
 
 local LockedTarget = nil
 local LastTargetCheck = 0
-local LastFireTime = 0
 local TARGET_CHECK_INTERVAL = 0.1
 local VelocityCache = {}
 
@@ -280,48 +276,21 @@ local function GetNextTarget()
 end
 
 --=============================================================================
--- AIMING
+-- AIMING - CameraType TRACK
 --=============================================================================
 
 local function AimAtPosition(targetPos)
 	if not targetPos then return end
 	
-	local currentCF = Camera.CFrame
-	local targetCF = CFrame.new(currentCF.Position, targetPos)
+	local localHRP = GetLocalHRP()
+	if not localHRP then return end
 	
-	Camera.CFrame = currentCF:Lerp(targetCF, CONFIG.Speed)
-end
-
---=============================================================================
--- AUTO FIRE
---=============================================================================
-
-local function AutoFire()
-	if not CONFIG.Enabled or not CONFIG.AutoFireEnabled then return end
-	
-	local now = tick()
-	if now - LastFireTime < CONFIG.FireRate then return end
-	
-	local target
-	if CONFIG.LockTarget then
-		target = LockedTarget
-	else
-		target = GetClosestTarget()
-	end
-	
-	if target and IsValidTarget(target, true) then
-		LastFireTime = now
-		
-		local localChar = GetCharacter(LocalPlayer)
-		if localChar then
-			local tool = localChar:FindFirstChildOfClass("Tool")
-			if tool and tool:FindFirstChild("Activate") then
-				tool.Activate:FireServer()
-			elseif tool and tool:FindFirstChild("Fire") then
-				tool.Fire:FireServer()
-			end
-		end
-	end
+	-- Dùng CameraType Track - camera follow target position
+	Camera.CameraType = Enum.CameraType.Track
+	Camera.CFrame = CFrame.new(
+		localHRP.Position + Vector3.new(0, 0, 5),
+		targetPos
+	)
 end
 
 --=============================================================================
@@ -349,7 +318,12 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 
 RunService.RenderStepped:Connect(function()
-	if not CONFIG.Enabled then return end
+	if not CONFIG.Enabled then 
+		if Camera.CameraType == Enum.CameraType.Track then
+			Camera.CameraType = Enum.CameraType.Custom
+		end
+		return 
+	end
 	
 	local now = tick()
 	local target
@@ -375,8 +349,6 @@ RunService.RenderStepped:Connect(function()
 			AimAtPosition(predictedPos)
 		end
 	end
-	
-	AutoFire()
 end)
 
 RunService.RenderStepped:Connect(function()
@@ -417,21 +389,19 @@ function AimbotAPI:Toggle(state)
 	CONFIG.Enabled = state
 	if not state then
 		LockedTarget = nil
+		if Camera.CameraType == Enum.CameraType.Track then
+			Camera.CameraType = Enum.CameraType.Custom
+		end
 	end
-end
-
-function AimbotAPI:ToggleAutoFire(state)
-	CONFIG.AutoFireEnabled = state
-end
-
-function AimbotAPI:SetFireRate(rate)
-	CONFIG.FireRate = rate
 end
 
 function AimbotAPI:Destroy()
 	fovCircle:Remove()
 	VelocityCache = {}
 	LockedTarget = nil
+	if Camera.CameraType == Enum.CameraType.Track then
+		Camera.CameraType = Enum.CameraType.Custom
+	end
 end
 
 return AimbotAPI
