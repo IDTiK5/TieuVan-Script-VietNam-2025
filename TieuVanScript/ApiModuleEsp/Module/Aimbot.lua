@@ -276,21 +276,16 @@ local function GetNextTarget()
 end
 
 --=============================================================================
--- AIMING - CameraType TRACK
+-- AIMING
 --=============================================================================
 
 local function AimAtPosition(targetPos)
 	if not targetPos then return end
 	
-	local localHRP = GetLocalHRP()
-	if not localHRP then return end
+	local currentCF = Camera.CFrame
+	local targetCF = CFrame.new(currentCF.Position, targetPos)
 	
-	-- Dùng CameraType Track - camera follow target position
-	Camera.CameraType = Enum.CameraType.Track
-	Camera.CFrame = CFrame.new(
-		localHRP.Position + Vector3.new(0, 0, 5),
-		targetPos
-	)
+	Camera.CFrame = currentCF:Lerp(targetCF, CONFIG.Speed)
 end
 
 --=============================================================================
@@ -318,12 +313,7 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 
 RunService.RenderStepped:Connect(function()
-	if not CONFIG.Enabled then 
-		if Camera.CameraType == Enum.CameraType.Track then
-			Camera.CameraType = Enum.CameraType.Custom
-		end
-		return 
-	end
+	if not CONFIG.Enabled then return end
 	
 	local now = tick()
 	local target
@@ -389,9 +379,6 @@ function AimbotAPI:Toggle(state)
 	CONFIG.Enabled = state
 	if not state then
 		LockedTarget = nil
-		if Camera.CameraType == Enum.CameraType.Track then
-			Camera.CameraType = Enum.CameraType.Custom
-		end
 	end
 end
 
@@ -399,9 +386,6 @@ function AimbotAPI:Destroy()
 	fovCircle:Remove()
 	VelocityCache = {}
 	LockedTarget = nil
-	if Camera.CameraType == Enum.CameraType.Track then
-		Camera.CameraType = Enum.CameraType.Custom
-	end
 end
 
 return AimbotAPI
