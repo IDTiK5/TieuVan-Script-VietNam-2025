@@ -21,10 +21,14 @@ local CONFIG = {
 	LockTarget = false,
 	SwitchKey = Enum.KeyCode.E,
 	FOVColor = Color3.fromRGB(255, 255, 255),
+	AutoFireEnabled = true,
+	FireKey = Enum.UserInputType.MouseButton1,
+	FireRate = 0.1,
 }
 
 local LockedTarget = nil
 local LastTargetCheck = 0
+local LastFireTime = 0
 local TARGET_CHECK_INTERVAL = 0.1
 local VelocityCache = {}
 
@@ -289,6 +293,38 @@ local function AimAtPosition(targetPos)
 end
 
 --=============================================================================
+-- AUTO FIRE
+--=============================================================================
+
+local function AutoFire()
+	if not CONFIG.Enabled or not CONFIG.AutoFireEnabled then return end
+	
+	local now = tick()
+	if now - LastFireTime < CONFIG.FireRate then return end
+	
+	local target
+	if CONFIG.LockTarget then
+		target = LockedTarget
+	else
+		target = GetClosestTarget()
+	end
+	
+	if target and IsValidTarget(target, true) then
+		LastFireTime = now
+		
+		local localChar = GetCharacter(LocalPlayer)
+		if localChar then
+			local tool = localChar:FindFirstChildOfClass("Tool")
+			if tool and tool:FindFirstChild("Activate") then
+				tool.Activate:FireServer()
+			elseif tool and tool:FindFirstChild("Fire") then
+				tool.Fire:FireServer()
+			end
+		end
+	end
+end
+
+--=============================================================================
 -- FOV CIRCLE
 --=============================================================================
 
@@ -339,6 +375,8 @@ RunService.RenderStepped:Connect(function()
 			AimAtPosition(predictedPos)
 		end
 	end
+	
+	AutoFire()
 end)
 
 RunService.RenderStepped:Connect(function()
@@ -380,6 +418,14 @@ function AimbotAPI:Toggle(state)
 	if not state then
 		LockedTarget = nil
 	end
+end
+
+function AimbotAPI:ToggleAutoFire(state)
+	CONFIG.AutoFireEnabled = state
+end
+
+function AimbotAPI:SetFireRate(rate)
+	CONFIG.FireRate = rate
 end
 
 function AimbotAPI:Destroy()
