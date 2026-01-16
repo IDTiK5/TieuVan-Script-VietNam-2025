@@ -153,28 +153,4 @@ return function(AimPage, AimbotAPI)
 			AimbotAPI:UpdateConfig({FOVOffsetY = Value})
 		end
 	})
-
-	AimSection:Toggle({
-		Name = "Auto Fire",
-		Flag = "AimbotAutoFire",
-		Default = false,
-		Callback = function(Value)
-			AimbotAPI:UpdateConfig({AutoFireEnabled = Value})
-			AimbotAPI:ToggleAutoFire(Value)
-		end
-	})
-
-	AimSection:Slider({
-		Name = "Fire Rate",
-		Flag = "AimbotFireRate",
-		Min = 0.01,
-		Max = 1,
-		Default = 0.1,
-		Decimals = 0.01,
-		Suffix = "s",
-		Callback = function(Value)
-			AimbotAPI:UpdateConfig({FireRate = Value})
-			AimbotAPI:SetFireRate(Value)
-		end
-	})
 end
