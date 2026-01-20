@@ -1,16 +1,5 @@
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local HttpService = game:GetService("HttpService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local CollectionService = game:GetService("CollectionService")
-local Camera = workspace.CurrentCamera
-local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
-
 local CONFIG = {
-	SilentAim = true,
+	SilentAim = false,
 	FOV = 150,
 	FOVColor = Color3.fromRGB(0, 255, 0),
 	VisibleCheck = true,
@@ -456,9 +445,9 @@ end)
 -- PUBLIC API
 --=============================================================================
 
-local RoundWarSilentAimAPI = {}
+local SilentAimAPI = {}
 
-function RoundWarSilentAimAPI:UpdateConfig(newConfig)
+function SilentAimAPI:UpdateConfig(newConfig)
 	for key, value in pairs(newConfig) do
 		if CONFIG[key] ~= nil then
 			CONFIG[key] = value
@@ -466,11 +455,11 @@ function RoundWarSilentAimAPI:UpdateConfig(newConfig)
 	end
 end
 
-function RoundWarSilentAimAPI:GetConfig()
+function SilentAimAPI:GetConfig()
 	return CONFIG
 end
 
-function RoundWarSilentAimAPI:Toggle(state)
+function SilentAimAPI:Toggle(state)
 	CONFIG.SilentAim = state
 	if not state then
 		CurrentTarget = nil
@@ -479,10 +468,10 @@ function RoundWarSilentAimAPI:Toggle(state)
 	end
 end
 
-function RoundWarSilentAimAPI:Destroy()
+function SilentAimAPI:Destroy()
 	Circle:Remove()
 	CurrentTarget = nil
 	TargetPart = nil
 end
 
-return RoundWarSilentAimAPI
+return SilentAimAPI
