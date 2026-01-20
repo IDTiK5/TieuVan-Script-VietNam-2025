@@ -1,22 +1,22 @@
-return function(AimPage, RoundWarSilentAimAPI)
-	local RWSection = AimPage:Section({
+return function(AimPage, SilentAimAPI)
+	local SASection = AimPage:Section({
 		Name = "Round War Silent Aim",
 		Description = "advanced silent aim",
 		Icon = "10709818534",
 		Side = 1
 	})
 
-	RWSection:Toggle({
+	SASection:Toggle({
 		Name = "Enable",
 		Flag = "RWSilentAimEnable",
 		Default = false,
 		Callback = function(Value)
-			RoundWarSilentAimAPI:UpdateConfig({SilentAim = Value})
-			RoundWarSilentAimAPI:Toggle(Value)
+			SilentAimAPI:UpdateConfig({SilentAim = Value})
+			SilentAimAPI:Toggle(Value)
 		end
 	})
 
-	RWSection:Slider({
+	SASection:Slider({
 		Name = "FOV Size",
 		Flag = "RWSilentAimFOV",
 		Min = 1,
@@ -25,20 +25,20 @@ return function(AimPage, RoundWarSilentAimAPI)
 		Decimals = 1,
 		Suffix = "px",
 		Callback = function(Value)
-			RoundWarSilentAimAPI:UpdateConfig({FOV = Value})
+			SilentAimAPI:UpdateConfig({FOV = Value})
 		end
 	})
 
-	RWSection:Label("FOV Color"):Colorpicker({
+	SASection:Label("FOV Color"):Colorpicker({
 		Name = "FOV Color",
 		Flag = "RWSilentAimFOVColor",
 		Default = Color3.fromRGB(0, 255, 0),
 		Callback = function(Value)
-			RoundWarSilentAimAPI:UpdateConfig({FOVColor = Value})
+			SilentAimAPI:UpdateConfig({FOVColor = Value})
 		end
 	})
 
-	RWSection:Slider({
+	SASection:Slider({
 		Name = "Hit Chance",
 		Flag = "RWSilentAimHitChance",
 		Min = 0,
@@ -47,11 +47,11 @@ return function(AimPage, RoundWarSilentAimAPI)
 		Decimals = 1,
 		Suffix = "%",
 		Callback = function(Value)
-			RoundWarSilentAimAPI:UpdateConfig({HitChance = math.floor(Value)})
+			SilentAimAPI:UpdateConfig({HitChance = math.floor(Value)})
 		end
 	})
 
-	RWSection:Dropdown({
+	SASection:Dropdown({
 		Name = "Target Mode",
 		Flag = "RWSilentAimTargetMode",
 		Default = "Players",
@@ -59,14 +59,14 @@ return function(AimPage, RoundWarSilentAimAPI)
 		Multi = false,
 		Callback = function(Value)
 			if type(Value) == "table" then
-				RoundWarSilentAimAPI:UpdateConfig({TargetMode = Value[1]})
+				SilentAimAPI:UpdateConfig({TargetMode = Value[1]})
 			else
-				RoundWarSilentAimAPI:UpdateConfig({TargetMode = Value})
+				SilentAimAPI:UpdateConfig({TargetMode = Value})
 			end
 		end
 	})
 
-	RWSection:Dropdown({
+	SASection:Dropdown({
 		Name = "Aim Part",
 		Flag = "RWSilentAimPart",
 		Default = "Head",
@@ -74,14 +74,14 @@ return function(AimPage, RoundWarSilentAimAPI)
 		Multi = false,
 		Callback = function(Value)
 			if type(Value) == "table" then
-				RoundWarSilentAimAPI:UpdateConfig({AimPart = Value[1]})
+				SilentAimAPI:UpdateConfig({AimPart = Value[1]})
 			else
-				RoundWarSilentAimAPI:UpdateConfig({AimPart = Value})
+				SilentAimAPI:UpdateConfig({AimPart = Value})
 			end
 		end
 	})
 
-	RWSection:Dropdown({
+	SASection:Dropdown({
 		Name = "Target Priority",
 		Flag = "RWSilentAimTargetPriority",
 		Default = "Crosshair",
@@ -89,63 +89,63 @@ return function(AimPage, RoundWarSilentAimAPI)
 		Multi = false,
 		Callback = function(Value)
 			if type(Value) == "table" then
-				RoundWarSilentAimAPI:UpdateConfig({TargetPriority = Value[1]})
+				SilentAimAPI:UpdateConfig({TargetPriority = Value[1]})
 			else
-				RoundWarSilentAimAPI:UpdateConfig({TargetPriority = Value})
+				SilentAimAPI:UpdateConfig({TargetPriority = Value})
 			end
 		end
 	})
 
-	RWSection:Toggle({
+	SASection:Toggle({
 		Name = "Team Check",
 		Flag = "RWSilentAimTeamCheck",
 		Default = false,
 		Callback = function(Value)
-			RoundWarSilentAimAPI:UpdateConfig({TeamCheck = Value})
+			SilentAimAPI:UpdateConfig({TeamCheck = Value})
 		end
 	})
 
-	RWSection:Toggle({
+	SASection:Toggle({
 		Name = "Team Check (NPCs)",
 		Flag = "RWSilentAimTeamCheckNPC",
 		Default = false,
 		Callback = function(Value)
-			RoundWarSilentAimAPI:UpdateConfig({TeamCheckForNPCs = Value})
+			SilentAimAPI:UpdateConfig({TeamCheckForNPCs = Value})
 		end
 	})
 
-	RWSection:Toggle({
+	SASection:Toggle({
 		Name = "Wall Check",
 		Flag = "RWSilentAimWallCheck",
 		Default = true,
 		Callback = function(Value)
-			RoundWarSilentAimAPI:UpdateConfig({VisibleCheck = Value})
+			SilentAimAPI:UpdateConfig({VisibleCheck = Value})
 		end
 	})
 
-	RWSection:Toggle({
+	SASection:Toggle({
 		Name = "Lock Target",
 		Flag = "RWSilentAimLockTarget",
 		Default = true,
 		Callback = function(Value)
-			RoundWarSilentAimAPI:UpdateConfig({StickyAim = Value})
+			SilentAimAPI:UpdateConfig({StickyAim = Value})
 		end
 	})
 
-	RWSection:Toggle({
+	SASection:Toggle({
 		Name = "Prediction",
 		Flag = "RWSilentAimPrediction",
 		Default = true,
 		Callback = function(Value)
 			if Value then
-				RoundWarSilentAimAPI:UpdateConfig({Prediction = 0.165})
+				SilentAimAPI:UpdateConfig({Prediction = 0.165})
 			else
-				RoundWarSilentAimAPI:UpdateConfig({Prediction = 0})
+				SilentAimAPI:UpdateConfig({Prediction = 0})
 			end
 		end
 	})
 
-	RWSection:Slider({
+	SASection:Slider({
 		Name = "Prediction Factor",
 		Flag = "RWSilentAimPredictionFactor",
 		Min = 0.01,
@@ -154,11 +154,11 @@ return function(AimPage, RoundWarSilentAimAPI)
 		Decimals = 0.01,
 		Suffix = "x",
 		Callback = function(Value)
-			RoundWarSilentAimAPI:UpdateConfig({Prediction = Value})
+			SilentAimAPI:UpdateConfig({Prediction = Value})
 		end
 	})
 
-	RWSection:Slider({
+	SASection:Slider({
 		Name = "Update Rate",
 		Flag = "RWSilentAimUpdateRate",
 		Min = 0.01,
@@ -167,25 +167,25 @@ return function(AimPage, RoundWarSilentAimAPI)
 		Decimals = 0.01,
 		Suffix = "s",
 		Callback = function(Value)
-			RoundWarSilentAimAPI:UpdateConfig({UpdateRate = Value})
+			SilentAimAPI:UpdateConfig({UpdateRate = Value})
 		end
 	})
 
-	RWSection:Toggle({
+	SASection:Toggle({
 		Name = "Aggressive NPC Detection",
 		Flag = "RWSilentAimAggressiveNPC",
 		Default = false,
 		Callback = function(Value)
-			RoundWarSilentAimAPI:UpdateConfig({AggressiveNPCDetection = Value})
+			SilentAimAPI:UpdateConfig({AggressiveNPCDetection = Value})
 		end
 	})
 
-	RWSection:Toggle({
+	SASection:Toggle({
 		Name = "Debug NPCs",
 		Flag = "RWSilentAimDebugNPC",
 		Default = false,
 		Callback = function(Value)
-			RoundWarSilentAimAPI:UpdateConfig({DebugNPCs = Value})
+			SilentAimAPI:UpdateConfig({DebugNPCs = Value})
 		end
 	})
 end
