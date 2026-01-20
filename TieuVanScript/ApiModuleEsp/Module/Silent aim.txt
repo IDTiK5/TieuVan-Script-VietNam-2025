@@ -12,7 +12,7 @@ local Mouse = LocalPlayer:GetMouse()
 local CONFIG = {
 	SilentAim = false,
 	FOV = 150,
-	FOVColor = Color3.fromRGB(0, 255, 0),
+	FOVColor = Color3.fromRGB(255, 255, 255),
 	VisibleCheck = true,
 	TeamCheck = false,
 	TeamCheckForNPCs = false,
@@ -26,6 +26,7 @@ local CONFIG = {
 	AggressiveNPCDetection = false,
 	TargetPriority = "Crosshair",
 	StickyAim = true,
+	AutoFire = false,
 }
 
 local CurrentTarget = nil
@@ -139,6 +140,59 @@ local function GetTargetPart(character)
 		return character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso") or character:FindFirstChild("HumanoidRootPart")
 	end
 	return character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Head")
+end
+
+--=============================================================================
+-- AUTO FIRE FUNCTION
+--=============================================================================
+
+local function TriggerAutoFire()
+	if not CONFIG.AutoFire or not TargetPart or not CurrentTarget then return end
+	
+	-- Tìm weapon hoặc fire remote
+	local backpack = LocalPlayer:FindFirstChild("Backpack")
+	if backpack then
+		for _, tool in pairs(backpack:GetChildren()) do
+			if tool:IsA("Tool") then
+				local fireFunc = tool:FindFirstChild("Fire") or tool:FindFirstChild("Shoot") or tool:FindFirstChild("Attack")
+				if fireFunc and fireFunc:IsA("RemoteEvent") then
+					fireFunc:FireServer(TargetPart)
+				elseif fireFunc and fireFunc:IsA("RemoteFunction") then
+					fireFunc:InvokeServer(TargetPart)
+				end
+				break
+			end
+		end
+	end
+	
+	-- Hoặc tìm trong character
+	local character = LocalPlayer.Character
+	if character then
+		for _, tool in pairs(character:GetChildren()) do
+			if tool:IsA("Tool") then
+				local fireFunc = tool:FindFirstChild("Fire") or tool:FindFirstChild("Shoot") or tool:FindFirstChild("Attack")
+				if fireFunc and fireFunc:IsA("RemoteEvent") then
+					fireFunc:FireServer(TargetPart)
+				elseif fireFunc and fireFunc:IsA("RemoteFunction") then
+					fireFunc:InvokeServer(TargetPart)
+				end
+				break
+			end
+		end
+	end
+end
+
+--=============================================================================
+-- BULLET TELEPORT FUNCTION
+--=============================================================================
+
+local function TeleportBulletToTarget(bullet)
+	if not CONFIG.BulletTeleport or not TargetPart then return end
+	if not bullet or not bullet:IsA("BasePart") then return end
+	
+	-- Teleport viên đạn trực tiếp tới target
+	bullet.CFrame = CFrame.new(TargetPart.Position)
+	bullet.Velocity = Vector3.new(0, 0, 0)
 end
 
 --=============================================================================
@@ -426,6 +480,26 @@ if not oldIndex then
 end
 
 --=============================================================================
+-- BULLET DETECTION
+--=============================================================================
+
+local BulletFolder = Instance.new("Folder", workspace)
+BulletFolder.Name = "BulletDetection"
+
+local function OnBulletCreated(bullet)
+	if CONFIG.BulletTeleport and TargetPart then
+		TeleportBulletToTarget(bullet)
+	end
+end
+
+workspace.DescendantAdded:Connect(function(descendant)
+	if descendant:IsA("BasePart") and descendant.Name:lower():find("bullet") then
+		task.wait(0.01)
+		OnBulletCreated(descendant)
+	end
+end)
+
+--=============================================================================
 -- RENDER LOOP
 --=============================================================================
 
@@ -434,6 +508,7 @@ task.spawn(function()
 		task.wait(CONFIG.UpdateRate)
 		if CONFIG.SilentAim then
 			CurrentTarget = GetTarget()
+			TriggerAutoFire()
 		else
 			CurrentTarget = nil
 			TargetInRange = false
