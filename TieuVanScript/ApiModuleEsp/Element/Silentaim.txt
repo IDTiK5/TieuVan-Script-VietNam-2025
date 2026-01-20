@@ -172,6 +172,24 @@ return function(AimPage, SilentAimAPI)
 	})
 
 	SASection:Toggle({
+		Name = "Auto Fire",
+		Flag = "SilentAimAutoFire",
+		Default = false,
+		Callback = function(Value)
+			SilentAimAPI:UpdateConfig({AutoFire = Value})
+		end
+	})
+
+	SASection:Toggle({
+		Name = "Bullet Teleport",
+		Flag = "SilentAimBulletTeleport",
+		Default = false,
+		Callback = function(Value)
+			SilentAimAPI:UpdateConfig({BulletTeleport = Value})
+		end
+	})
+
+	SASection:Toggle({
 		Name = "Aggressive NPC Detection",
 		Flag = "SilentAimAggressiveNPC",
 		Default = false,
