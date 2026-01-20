@@ -45,6 +45,7 @@ mainScreenGui.Parent = playerGui
 
 local espBoxes = {}
 local gradientAnimationConnection = nil
+local rotationOffset = 0
 
 --=============================================================================
 -- UTILITY FUNCTIONS
@@ -153,11 +154,13 @@ local function startGradientAnimation()
 	
 	if not CONFIG.EnableGradientAnimation then return end
 	
-	local rotationOffset = 0
+	rotationOffset = 0
 	gradientAnimationConnection = RunService.RenderStepped:Connect(function(deltaTime)
 		if not CONFIG.EnableGradientAnimation then
-			gradientAnimationConnection:Disconnect()
-			gradientAnimationConnection = nil
+			if gradientAnimationConnection then
+				gradientAnimationConnection:Disconnect()
+				gradientAnimationConnection = nil
+			end
 			return
 		end
 		
@@ -165,7 +168,7 @@ local function startGradientAnimation()
 		
 		for targetPlayer, espData in pairs(espBoxes) do
 			if espData and espData.UIGradient then
-				espData.UIGradient.Rotation = CONFIG.GradientRotation + rotationOffset
+				espData.UIGradient.Rotation = (CONFIG.GradientRotation + rotationOffset) % 360
 			end
 		end
 	end)
@@ -561,6 +564,15 @@ function BoxESPAPI:UpdateConfig(newConfig)
 			CONFIG[key] = value
 		end
 	end
+	
+	-- Restart animation nếu cấu hình gradient thay đổi
+	if newConfig.EnableGradientAnimation ~= nil then
+		if newConfig.EnableGradientAnimation then
+			startGradientAnimation()
+		else
+			stopGradientAnimation()
+		end
+	end
 end
 
 function BoxESPAPI:GetConfig()
@@ -572,6 +584,7 @@ function BoxESPAPI:Toggle(state)
 end
 
 function BoxESPAPI:Destroy()
+	stopGradientAnimation()
 	for targetPlayer in pairs(espBoxes) do
 		removeEspBox(targetPlayer)
 	end
