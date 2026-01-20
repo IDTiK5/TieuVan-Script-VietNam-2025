@@ -1,189 +1,191 @@
-return function(AimPage, SilentAimAPI)
-	local SilentAimSection = AimPage:Section({
-		Name = "Silent Aim",
-		Description = "silent aim",
+return function(AimPage, RoundWarSilentAimAPI)
+	local RWSection = AimPage:Section({
+		Name = "Round War Silent Aim",
+		Description = "advanced silent aim",
 		Icon = "10709818534",
 		Side = 1
 	})
 
-	SilentAimSection:Toggle({
+	RWSection:Toggle({
 		Name = "Enable",
-		Flag = "SilentAimEnable",
+		Flag = "RWSilentAimEnable",
 		Default = false,
 		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({Enabled = Value})
-			SilentAimAPI:Toggle(Value)
+			RoundWarSilentAimAPI:UpdateConfig({SilentAim = Value})
+			RoundWarSilentAimAPI:Toggle(Value)
 		end
 	})
 
-	SilentAimSection:Slider({
+	RWSection:Slider({
 		Name = "FOV Size",
-		Flag = "SilentAimFOV",
+		Flag = "RWSilentAimFOV",
 		Min = 1,
 		Max = 500,
 		Default = 150,
 		Decimals = 1,
 		Suffix = "px",
 		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({FOVSize = Value})
+			RoundWarSilentAimAPI:UpdateConfig({FOV = Value})
 		end
 	})
 
-	SilentAimSection:Label("FOV Color"):Colorpicker({
+	RWSection:Label("FOV Color"):Colorpicker({
 		Name = "FOV Color",
-		Flag = "SilentAimFOVColor",
+		Flag = "RWSilentAimFOVColor",
 		Default = Color3.fromRGB(0, 255, 0),
 		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({FOVColor = Value})
+			RoundWarSilentAimAPI:UpdateConfig({FOVColor = Value})
 		end
 	})
 
-	SilentAimSection:Slider({
-		Name = "Max Range",
-		Flag = "SilentAimRange",
-		Min = 1,
-		Max = 10000,
-		Default = 5000,
-		Decimals = 1,
-		Suffix = "m",
-		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({MaxRange = Value})
-		end
-	})
-
-	SilentAimSection:Dropdown({
-		Name = "Target Mode",
-		Flag = "SilentAimTargetMode",
-		Default = "NPCs",
-		Items = {"NPCs", "Players", "Both"},
-		Multi = false,
-		Callback = function(Value)
-			if type(Value) == "table" then
-				SilentAimAPI:UpdateConfig({TargetMode = Value[1]})
-			else
-				SilentAimAPI:UpdateConfig({TargetMode = Value})
-			end
-		end
-	})
-
-	SilentAimSection:Dropdown({
-		Name = "Aim Part",
-		Flag = "SilentAimPart",
-		Default = "Head",
-		Items = {"Head", "UpperTorso", "LowerTorso"},
-		Multi = false,
-		Callback = function(Value)
-			if type(Value) == "table" then
-				SilentAimAPI:UpdateConfig({AimPart = Value[1]})
-			else
-				SilentAimAPI:UpdateConfig({AimPart = Value})
-			end
-		end
-	})
-
-	SilentAimSection:Toggle({
-		Name = "Team Check",
-		Flag = "SilentAimTeamCheck",
-		Default = true,
-		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({TeamCheck = Value})
-		end
-	})
-
-	SilentAimSection:Toggle({
-		Name = "Wall Check",
-		Flag = "SilentAimWallCheck",
-		Default = true,
-		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({WallCheck = Value})
-		end
-	})
-
-	SilentAimSection:Toggle({
-		Name = "Lock Target",
-		Flag = "SilentAimLockTarget",
-		Default = true,
-		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({LockTarget = Value})
-		end
-	})
-
-	SilentAimSection:Toggle({
-		Name = "Prediction",
-		Flag = "SilentAimPrediction",
-		Default = true,
-		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({PredictionEnabled = Value})
-		end
-	})
-
-	SilentAimSection:Slider({
-		Name = "Prediction Factor",
-		Flag = "SilentAimPredictionFactor",
-		Min = 0.01,
-		Max = 1,
-		Default = 0.165,
-		Decimals = 0.01,
-		Suffix = "x",
-		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({PredictionFactor = Value})
-		end
-	})
-
-	SilentAimSection:Slider({
+	RWSection:Slider({
 		Name = "Hit Chance",
-		Flag = "SilentAimHitChance",
+		Flag = "RWSilentAimHitChance",
 		Min = 0,
 		Max = 100,
 		Default = 100,
 		Decimals = 1,
 		Suffix = "%",
 		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({HitChance = math.floor(Value)})
+			RoundWarSilentAimAPI:UpdateConfig({HitChance = math.floor(Value)})
 		end
 	})
 
-	SilentAimSection:Slider({
-		Name = "Vertical Offset",
-		Flag = "SilentAimVerticalOffset",
-		Min = -1,
+	RWSection:Dropdown({
+		Name = "Target Mode",
+		Flag = "RWSilentAimTargetMode",
+		Default = "Players",
+		Items = {"NPCs", "Players", "Both"},
+		Multi = false,
+		Callback = function(Value)
+			if type(Value) == "table" then
+				RoundWarSilentAimAPI:UpdateConfig({TargetMode = Value[1]})
+			else
+				RoundWarSilentAimAPI:UpdateConfig({TargetMode = Value})
+			end
+		end
+	})
+
+	RWSection:Dropdown({
+		Name = "Aim Part",
+		Flag = "RWSilentAimPart",
+		Default = "Head",
+		Items = {"Head", "Torso"},
+		Multi = false,
+		Callback = function(Value)
+			if type(Value) == "table" then
+				RoundWarSilentAimAPI:UpdateConfig({AimPart = Value[1]})
+			else
+				RoundWarSilentAimAPI:UpdateConfig({AimPart = Value})
+			end
+		end
+	})
+
+	RWSection:Dropdown({
+		Name = "Target Priority",
+		Flag = "RWSilentAimTargetPriority",
+		Default = "Crosshair",
+		Items = {"Crosshair", "Distance", "LowestHP"},
+		Multi = false,
+		Callback = function(Value)
+			if type(Value) == "table" then
+				RoundWarSilentAimAPI:UpdateConfig({TargetPriority = Value[1]})
+			else
+				RoundWarSilentAimAPI:UpdateConfig({TargetPriority = Value})
+			end
+		end
+	})
+
+	RWSection:Toggle({
+		Name = "Team Check",
+		Flag = "RWSilentAimTeamCheck",
+		Default = false,
+		Callback = function(Value)
+			RoundWarSilentAimAPI:UpdateConfig({TeamCheck = Value})
+		end
+	})
+
+	RWSection:Toggle({
+		Name = "Team Check (NPCs)",
+		Flag = "RWSilentAimTeamCheckNPC",
+		Default = false,
+		Callback = function(Value)
+			RoundWarSilentAimAPI:UpdateConfig({TeamCheckForNPCs = Value})
+		end
+	})
+
+	RWSection:Toggle({
+		Name = "Wall Check",
+		Flag = "RWSilentAimWallCheck",
+		Default = true,
+		Callback = function(Value)
+			RoundWarSilentAimAPI:UpdateConfig({VisibleCheck = Value})
+		end
+	})
+
+	RWSection:Toggle({
+		Name = "Lock Target",
+		Flag = "RWSilentAimLockTarget",
+		Default = true,
+		Callback = function(Value)
+			RoundWarSilentAimAPI:UpdateConfig({StickyAim = Value})
+		end
+	})
+
+	RWSection:Toggle({
+		Name = "Prediction",
+		Flag = "RWSilentAimPrediction",
+		Default = true,
+		Callback = function(Value)
+			if Value then
+				RoundWarSilentAimAPI:UpdateConfig({Prediction = 0.165})
+			else
+				RoundWarSilentAimAPI:UpdateConfig({Prediction = 0})
+			end
+		end
+	})
+
+	RWSection:Slider({
+		Name = "Prediction Factor",
+		Flag = "RWSilentAimPredictionFactor",
+		Min = 0.01,
 		Max = 1,
-		Default = 0,
-		Decimals = 0.1,
-		Suffix = "m",
+		Default = 0.165,
+		Decimals = 0.01,
+		Suffix = "x",
 		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({OffsetY = Value})
+			RoundWarSilentAimAPI:UpdateConfig({Prediction = Value})
 		end
 	})
 
-	SilentAimSection:Slider({
-		Name = "FOV Vertical Offset",
-		Flag = "SilentAimFOVVerticalOffset",
-		Min = -100,
-		Max = 100,
-		Default = 0,
-		Decimals = 1,
-		Suffix = "px",
+	RWSection:Slider({
+		Name = "Update Rate",
+		Flag = "RWSilentAimUpdateRate",
+		Min = 0.01,
+		Max = 1,
+		Default = 0.1,
+		Decimals = 0.01,
+		Suffix = "s",
 		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({FOVOffsetY = Value})
+			RoundWarSilentAimAPI:UpdateConfig({UpdateRate = Value})
 		end
 	})
 
-	SilentAimSection:Toggle({
+	RWSection:Toggle({
 		Name = "Aggressive NPC Detection",
-		Flag = "SilentAimAggressiveNPC",
+		Flag = "RWSilentAimAggressiveNPC",
 		Default = false,
 		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({AggressiveNPCDetection = Value})
+			RoundWarSilentAimAPI:UpdateConfig({AggressiveNPCDetection = Value})
 		end
 	})
 
-	SilentAimSection:Toggle({
+	RWSection:Toggle({
 		Name = "Debug NPCs",
-		Flag = "SilentAimDebugNPC",
+		Flag = "RWSilentAimDebugNPC",
 		Default = false,
 		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({DebugNPCs = Value})
+			RoundWarSilentAimAPI:UpdateConfig({DebugNPCs = Value})
 		end
 	})
 end
