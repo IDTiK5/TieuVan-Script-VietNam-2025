@@ -1,40 +1,44 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
 local UserInputService = game:GetService("UserInputService")
-
-local Camera = Workspace.CurrentCamera
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CollectionService = game:GetService("CollectionService")
+local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
 
 local CONFIG = {
-	Enabled = false,
-	FOVSize = 150,
-	MaxRange = 5000,
-	TeamCheck = true,
-	WallCheck = true,
-	AimPart = "Head",
-	PredictionEnabled = true,
-	PredictionFactor = 0.165,
-	OffsetY = 0,
-	FOVOffsetY = 0,
-	LockTarget = true,
-	HitChance = 100,
-	TargetMode = "NPCs", -- "NPCs", "Players", "Both"
-	AggressiveNPCDetection = false,
-	DebugNPCs = false,
+	SilentAim = true,
+	FOV = 150,
 	FOVColor = Color3.fromRGB(0, 255, 0),
+	VisibleCheck = true,
+	TeamCheck = false,
+	TeamCheckForNPCs = false,
+	Prediction = 0.165,
+	UpdateRate = 0.1,
+	TargetMode = "Players",
+	AimPart = "Head",
+	HitChance = 100,
+	BulletTeleport = false,
+	DebugNPCs = false,
+	AggressiveNPCDetection = false,
+	TargetPriority = "Crosshair",
+	StickyAim = true,
 }
 
-local LockedTarget = nil
-local LastTargetCheck = 0
-local TARGET_CHECK_INTERVAL = 0.1
-local VelocityCache = {}
-local LastCacheUpdate = 0
-local CacheUpdateInterval = 1
+local CurrentTarget = nil
+local TargetPart = nil
+local TargetInRange = false
 local NPCCache = {}
 local PlayerCache = {}
+local LastCacheUpdate = 0
+local CacheUpdateInterval = 2
 
---// NPC TAGS
+local oldNamecall = nil
+local oldIndex = nil
+
 local NPCTags = {
 	"NPC", "Npc", "npc", "Enemy", "enemy", "Enemies", "enemies",
 	"Hostile", "hostile", "Bad", "bad", "BadGuy", "badguy",
@@ -46,96 +50,15 @@ local NPCTags = {
 	"Guardian", "guardian", "Soldier", "soldier", "Warrior", "warrior",
 	"Fighter", "fighter", "Target", "target", "Dummy", "dummy",
 	"Dummies", "dummies", "Skeleton", "skeleton", "Orc", "orc",
-	"Goblin", "goblin", "Robot", "robot", "Drone", "drone"
+	"Goblin", "goblin", "Robot", "robot", "Drone", "drone",
+	"Android", "android", "Cyborg", "cyborg", "Automaton", "automaton",
+	"Servant", "servant", "Minion", "minion", "Slave", "slave", "Pawn", "pawn",
+	"AI", "ai", "A.I.", "Char", "char", "Character", "character",
+	"Model", "model", "Event", "event", "Special", "special",
 }
 
 --=============================================================================
 -- UTILITY FUNCTIONS
---=============================================================================
-
-local function GetCharacter(player)
-	return player and player.Character
-end
-
-local function GetCharacterPart(player, partName)
-	if not partName then return nil end
-	local char = GetCharacter(player)
-	return char and char:FindFirstChild(partName)
-end
-
-local function GetHumanoid(player)
-	local char = GetCharacter(player)
-	return char and (char:FindFirstChild("Humanoid") or char:FindFirstChildOfClass("Humanoid"))
-end
-
-local function GetLocalHRP()
-	return GetCharacterPart(LocalPlayer, "HumanoidRootPart")
-end
-
-local function GetTargetPart(character)
-	if CONFIG.AimPart == "Head" then
-		return character:FindFirstChild("Head")
-	elseif CONFIG.AimPart == "Torso" or CONFIG.AimPart == "UpperTorso" then
-		return character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso") or character:FindFirstChild("HumanoidRootPart")
-	elseif CONFIG.AimPart == "LowerTorso" then
-		return character:FindFirstChild("LowerTorso") or character:FindFirstChild("Torso") or character:FindFirstChild("HumanoidRootPart")
-	end
-	return character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Head")
-end
-
-local function GetScreenPosition(position)
-	local screenPos, onScreen = Camera:WorldToScreenPoint(position)
-	return Vector2.new(screenPos.X, screenPos.Y), onScreen, screenPos.Z
-end
-
-local function GetScreenCenter()
-	return Vector2.new(Camera.ViewportSize.X / 2.0, Camera.ViewportSize.Y / 2.0 + CONFIG.FOVOffsetY)
-end
-
-local function GetAngularDistance(position)
-	local camPos = Camera.CFrame.Position
-	local camLook = Camera.CFrame.LookVector
-	local toTarget = (position - camPos).Unit
-	
-	local dot = camLook:Dot(toTarget)
-	dot = math.clamp(dot, -1, 1)
-	local angle = math.acos(dot)
-	local angleDegrees = math.deg(angle)
-	
-	return angleDegrees
-end
-
-local function GetFOVAngleFromPixels()
-	local viewportSize = Camera.ViewportSize
-	local halfFOV = math.rad(Camera.FieldOfView / 2)
-	local pixelsPerDegree = (viewportSize.Y / 2) / math.deg(halfFOV)
-	return CONFIG.FOVSize / pixelsPerDegree
-end
-
-local function IsVisibleTarget(character)
-	if not CONFIG.WallCheck then return true end
-	
-	local targetPart = GetTargetPart(character)
-	if not targetPart then return false end
-	
-	local origin = Camera.CFrame.Position
-	local targetPos = targetPart.Position
-	local direction = targetPos - origin
-	local distance = direction.Magnitude
-	
-	if distance < 1 then return true end
-	
-	local rayParams = RaycastParams.new()
-	rayParams.FilterType = Enum.RaycastFilterType.Exclude
-	rayParams.FilterDescendantsInstances = {GetCharacter(LocalPlayer), character}
-	rayParams.IgnoreWater = true
-	
-	local result = Workspace:Raycast(origin, direction.Unit * (distance - 1), rayParams)
-	return result == nil
-end
-
---=============================================================================
--- NPC DETECTION
 --=============================================================================
 
 local function IsPlayer(character)
@@ -153,9 +76,7 @@ local function IsNPC(character)
 	local head = character:FindFirstChild("Head")
 	local hrp = character:FindFirstChild("HumanoidRootPart")
 	
-	if not humanoid or not head or not hrp or humanoid.Health <= 0 then
-		return false
-	end
+	if not humanoid or not head or not hrp or humanoid.Health <= 0 then return false end
 	
 	if CONFIG.AggressiveNPCDetection then return true end
 	
@@ -164,23 +85,25 @@ local function IsNPC(character)
 		if charName:find(tag:lower(), 1, true) then return true end
 	end
 	
-	local npcFolders = {"NPCs", "Enemies", "Bots", "Mobs", "Targets", "Enemy", "Hostile", "Monsters"}
+	local npcFolders = {"NPCs", "Enemies", "Bots", "Mobs", "Targets", "Enemy", "Hostile",
+		"Monsters", "Zombies", "Creatures", "Characters", "Spawns", "EnemySpawns", "NPCSpawns", "Bosses", "Minions"}
+	
 	for _, folderName in pairs(npcFolders) do
-		local folder = Workspace:FindFirstChild(folderName)
+		local folder = workspace:FindFirstChild(folderName)
 		if folder and character:IsDescendantOf(folder) then return true end
 	end
 	
 	return true
 end
 
-local function FindNPCsRecursive(parent)
+local function FindNPCsInWorkspaceRecursive(parent)
 	local foundNPCs = {}
 	for _, child in pairs(parent:GetChildren()) do
 		if child:IsA("Model") and IsNPC(child) then
 			table.insert(foundNPCs, child)
 		end
-		if not child:IsA("BasePart") then
-			local subNPCs = FindNPCsRecursive(child)
+		if not child:IsA("BasePart") and not child:IsA("Decal") and not child:IsA("Texture") then
+			local subNPCs = FindNPCsInWorkspaceRecursive(child)
 			for _, npc in pairs(subNPCs) do
 				table.insert(foundNPCs, npc)
 			end
@@ -189,16 +112,49 @@ local function FindNPCsRecursive(parent)
 	return foundNPCs
 end
 
-local function UpdateNPCCache()
+local function IsEnemyPlayer(player)
+	if not CONFIG.TeamCheck then return true end
+	if not player then return false end
+	if not LocalPlayer.Team or not player.Team then return true end
+	return LocalPlayer.Team ~= player.Team
+end
+
+local function IsEnemyNPC(npcModel)
+	if not CONFIG.TeamCheckForNPCs then return true end
+	local npcTeamValue = npcModel:FindFirstChild("Team")
+	if npcTeamValue and npcTeamValue:IsA("StringValue") then
+		local npcTeam = npcTeamValue.Value
+		local localTeam = LocalPlayer.Team and LocalPlayer.Team.Name or ""
+		if npcTeam and localTeam and npcTeam ~= localTeam then return true end
+	end
+	local isEnemy = npcModel:FindFirstChild("IsEnemy")
+	if isEnemy and isEnemy:IsA("BoolValue") and isEnemy.Value == true then return true end
+	return true
+end
+
+local function GetTargetPart(character)
+	if CONFIG.AimPart == "Head" then
+		return character:FindFirstChild("Head")
+	elseif CONFIG.AimPart == "Torso" then
+		return character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso") or character:FindFirstChild("HumanoidRootPart")
+	end
+	return character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Head")
+end
+
+--=============================================================================
+-- CACHE & VALIDATION
+--=============================================================================
+
+local function UpdateCaches()
 	local currentTime = tick()
 	if currentTime - LastCacheUpdate < CacheUpdateInterval then return end
-	
 	LastCacheUpdate = currentTime
+	
 	NPCCache = {}
 	PlayerCache = {}
 	
 	local allModels = {}
-	for _, model in pairs(Workspace:GetChildren()) do
+	for _, model in pairs(workspace:GetChildren()) do
 		if model:IsA("Model") and model ~= LocalPlayer.Character then
 			table.insert(allModels, model)
 		end
@@ -206,9 +162,9 @@ local function UpdateNPCCache()
 	
 	local npcFolders = {"NPCs", "Enemies", "Bots", "Mobs", "Targets", "Characters", "Spawns", "Monsters"}
 	for _, folderName in pairs(npcFolders) do
-		local folder = Workspace:FindFirstChild(folderName)
+		local folder = workspace:FindFirstChild(folderName)
 		if folder then
-			local npcsInFolder = FindNPCsRecursive(folder)
+			local npcsInFolder = FindNPCsInWorkspaceRecursive(folder)
 			for _, npc in pairs(npcsInFolder) do
 				table.insert(allModels, npc)
 			end
@@ -221,8 +177,7 @@ local function UpdateNPCCache()
 		
 		if hrp and humanoid and humanoid.Health > 0 then
 			if IsPlayer(model) then
-				local player = Players:GetPlayerFromCharacter(model)
-				PlayerCache[model] = {Model = model, HRP = hrp, Humanoid = humanoid, Player = player, IsNPC = false}
+				PlayerCache[model] = {Model = model, HRP = hrp, Humanoid = humanoid, Player = Players:GetPlayerFromCharacter(model), IsNPC = false}
 			elseif IsNPC(model) then
 				NPCCache[model] = {Model = model, HRP = hrp, Humanoid = humanoid, IsNPC = true}
 			end
@@ -241,171 +196,160 @@ local function UpdateNPCCache()
 	end
 end
 
---=============================================================================
--- VELOCITY & PREDICTION
---=============================================================================
-
-local function CalculateVelocity(character, currentPos)
-	local cache = VelocityCache[character]
-	local now = tick()
+local function ValidateCurrentTarget()
+	if not CurrentTarget or not TargetPart then return false end
+	local humanoid = CurrentTarget:FindFirstChildOfClass("Humanoid")
+	local hrp = CurrentTarget:FindFirstChild("HumanoidRootPart")
+	if not humanoid or humanoid.Health <= 0 or not hrp then return false end
 	
-	if not cache then
-		VelocityCache[character] = {
-			Position = currentPos,
-			Time = now,
-			Velocity = Vector3.zero
-		}
-		return Vector3.zero
+	local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+	local targetPos = TargetPart.Position
+	local screenPos, onScreen = Camera:WorldToViewportPoint(targetPos)
+	if not onScreen then return false end
+	
+	local screenPoint = Vector2.new(screenPos.X, screenPos.Y)
+	local dist = (screenPoint - screenCenter).Magnitude
+	if dist > CONFIG.FOV then return false end
+	
+	if CONFIG.VisibleCheck then
+		local raycastParams = RaycastParams.new()
+		raycastParams.FilterDescendantsInstances = {LocalPlayer.Character, Camera}
+		raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+		raycastParams.IgnoreWater = true
+		
+		local origin = Camera.CFrame.Position
+		local direction = (targetPos - origin).Unit * (targetPos - origin).Magnitude
+		local ray = workspace:Raycast(origin, direction, raycastParams)
+		if ray and not ray.Instance:IsDescendantOf(CurrentTarget) then return false end
 	end
-	
-	local deltaTime = now - cache.Time
-	if deltaTime < 0.016 then
-		return cache.Velocity
-	end
-	
-	local velocity = (currentPos - cache.Position) / deltaTime
-	
-	VelocityCache[character] = {
-		Position = currentPos,
-		Time = now,
-		Velocity = velocity
-	}
-	
-	return velocity
-end
-
-local function PredictPosition(character, targetPart)
-	if not CONFIG.PredictionEnabled then return targetPart.Position end
-	if not targetPart then return targetPart.Position end
-	
-	local currentPos = targetPart.Position
-	local hrp = character:FindFirstChild("HumanoidRootPart")
-	local velocity = hrp and hrp.Velocity or Vector3.zero
-	
-	return currentPos + velocity * CONFIG.PredictionFactor
+	return true
 end
 
 --=============================================================================
 -- TARGET SELECTION
 --=============================================================================
 
-local function IsValidTarget(character, skipFOVCheck)
-	if not character or character == LocalPlayer.Character then return false end
-	if not character:IsDescendantOf(Workspace) then return false end
+local function GetTarget()
+	if not LocalPlayer.Character then 
+		TargetInRange = false
+		TargetPart = nil
+		return nil 
+	end
 	
-	local hrp = character:FindFirstChild("HumanoidRootPart")
-	if not hrp then return false end
+	UpdateCaches()
 	
-	local hum = character:FindFirstChildOfClass("Humanoid")
-	if not hum or hum.Health <= 0 then return false end
-	
-	local localHRP = GetLocalHRP()
-	if not localHRP then return false end
-	
-	local targetPart = GetTargetPart(character)
-	if not targetPart then return false end
-	
-	-- Check if NPC or Player
-	local isNPC = IsNPC(character)
-	local isPlayer = IsPlayer(character)
-	
-	-- Check target mode
-	if CONFIG.TargetMode == "NPCs" and not isNPC then return false end
-	if CONFIG.TargetMode == "Players" and not isPlayer then return false end
-	
-	-- Team check for players
-	if isPlayer then
-		if CONFIG.TeamCheck then
-			local player = Players:GetPlayerFromCharacter(character)
-			if player and player.Team and LocalPlayer.Team and player.Team == LocalPlayer.Team then
-				return false
-			end
+	if CONFIG.StickyAim and CurrentTarget then
+		if ValidateCurrentTarget() then
+			TargetInRange = true
+			return CurrentTarget
+		else
+			CurrentTarget = nil
+			TargetPart = nil
 		end
 	end
 	
-	-- Range check
-	local worldDist = (targetPart.Position - localHRP.Position).Magnitude
-	if worldDist > CONFIG.MaxRange then return false end
+	local bestScore = math.huge
+	local closestPart = nil
+	local closestTarget = nil
+	local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+	local localChar = LocalPlayer.Character
+	local localRoot = localChar:FindFirstChild("HumanoidRootPart")
 	
-	-- FOV check
-	if not skipFOVCheck then
-		local angularDist = GetAngularDistance(targetPart.Position)
-		local fovAngle = GetFOVAngleFromPixels()
-		if angularDist > fovAngle then return false end
-	end
+	TargetInRange = false
+	TargetPart = nil
+	if not localRoot then return nil end
 	
-	-- Wall check
-	if CONFIG.WallCheck and not IsVisibleTarget(character) then
-		return false
-	end
-	
-	return true
-end
-
-local function GetClosestTarget()
-	UpdateNPCCache()
-	
-	local bestTarget = nil
-	local bestDistance = math.huge
-	
-	-- Check NPCs
-	if CONFIG.TargetMode == "NPCs" or CONFIG.TargetMode == "Both" then
-		for character, _ in pairs(NPCCache) do
-			if IsValidTarget(character, false) then
-				local targetPart = GetTargetPart(character)
-				if targetPart then
-					local angularDist = GetAngularDistance(targetPart.Position)
-					if angularDist < bestDistance then
-						bestTarget = character
-						bestDistance = angularDist
-					end
-				end
-			end
-		end
-	end
-	
-	-- Check Players
-	if CONFIG.TargetMode == "Players" or CONFIG.TargetMode == "Both" then
-		for character, _ in pairs(PlayerCache) do
-			if IsValidTarget(character, false) then
-				local targetPart = GetTargetPart(character)
-				if targetPart then
-					local angularDist = GetAngularDistance(targetPart.Position)
-					if angularDist < bestDistance then
-						bestTarget = character
-						bestDistance = angularDist
-					end
-				end
-			end
-		end
-	end
-	
-	return bestTarget
-end
-
-local function ShouldSwitchTarget()
-	if not CONFIG.LockTarget then return true end
-	if not LockedTarget then return true end
-	
-	if not IsValidTarget(LockedTarget, true) then
-		return true
-	end
-	
-	local targetPart = GetTargetPart(LockedTarget)
-	if targetPart then
-		local angularDist = GetAngularDistance(targetPart.Position)
-		local fovAngle = GetFOVAngleFromPixels()
+	local function ProcessTarget(data, isPlayer)
+		local hrp = data.HRP
+		local humanoid = data.Humanoid
 		
-		if angularDist > fovAngle * 2 then
-			return true
+		if hrp and humanoid and humanoid.Health > 0 then
+			if isPlayer then
+				if not IsEnemyPlayer(data.Player) then return end
+			else
+				if not IsEnemyNPC(data.Model) then return end
+			end
+			
+			local targetPart = GetTargetPart(data.Model)
+			if not targetPart then targetPart = hrp end
+			
+			local targetPos = targetPart.Position
+			if hrp.Velocity.Magnitude > 1 and CONFIG.Prediction > 0 then
+				targetPos = targetPos + (hrp.Velocity * CONFIG.Prediction)
+			end
+			
+			local screenPos, onScreen = Camera:WorldToViewportPoint(targetPos)
+			if onScreen then
+				local screenPoint = Vector2.new(screenPos.X, screenPos.Y)
+				local distFromCenter = (screenPoint - screenCenter).Magnitude
+				
+				if distFromCenter <= CONFIG.FOV then
+					local isVisible = true
+					
+					if CONFIG.VisibleCheck then
+						local raycastParams = RaycastParams.new()
+						raycastParams.FilterDescendantsInstances = {localChar, Camera}
+						raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+						raycastParams.IgnoreWater = true
+						
+						local origin = Camera.CFrame.Position
+						local direction = (targetPos - origin).Unit * (targetPos - origin).Magnitude
+						local ray = workspace:Raycast(origin, direction, raycastParams)
+						
+						if ray and not ray.Instance:IsDescendantOf(data.Model) then isVisible = false end
+					end
+					
+					TargetInRange = true
+					
+					if isVisible or not CONFIG.VisibleCheck then
+						local currentScore = 0
+						if CONFIG.TargetPriority == "Crosshair" then
+							currentScore = distFromCenter
+						elseif CONFIG.TargetPriority == "Distance" then
+							currentScore = (targetPos - localRoot.Position).Magnitude
+						elseif CONFIG.TargetPriority == "LowestHP" then
+							currentScore = humanoid.Health
+						else
+							currentScore = distFromCenter
+						end
+						
+						if currentScore < bestScore then
+							bestScore = currentScore
+							closestPart = targetPart
+							closestTarget = data.Model
+						end
+					end
+				end
+			end
 		end
 	end
 	
-	return false
+	if CONFIG.TargetMode == "NPCs" or CONFIG.TargetMode == "Both" then
+		for _, data in pairs(NPCCache) do ProcessTarget(data, false) end
+	end
+	
+	if CONFIG.TargetMode == "Players" or CONFIG.TargetMode == "Both" then
+		for _, data in pairs(PlayerCache) do ProcessTarget(data, true) end
+	end
+	
+	TargetPart = closestPart
+	return closestTarget
 end
 
 --=============================================================================
--- SILENT AIM HOOKS
+-- FOV CIRCLE
+--=============================================================================
+
+local Circle = Drawing.new("Circle")
+Circle.Color = CONFIG.FOVColor
+Circle.Thickness = 2
+Circle.Visible = false
+Circle.Radius = CONFIG.FOV
+Circle.Transparency = 0.7
+Circle.Filled = false
+
+--=============================================================================
+-- HIT CHANCE & HOOKS
 --=============================================================================
 
 local function ShouldHit()
@@ -414,15 +358,11 @@ local function ShouldHit()
 	return math.random(1, 100) <= CONFIG.HitChance
 end
 
-local oldNamecall = nil
 if not oldNamecall then
 	oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-		if not CONFIG.Enabled or not LockedTarget then
+		if not CONFIG.SilentAim or not TargetPart or not CurrentTarget then
 			return oldNamecall(self, ...)
 		end
-		
-		local targetPart = GetTargetPart(LockedTarget)
-		if not targetPart then return oldNamecall(self, ...) end
 		
 		local method = getnamecallmethod()
 		local args = {...}
@@ -437,14 +377,14 @@ if not oldNamecall then
 				
 				for i, arg in pairs(args) do
 					if typeof(arg) == "Vector3" then
-						newArgs[i] = targetPart.Position
+						newArgs[i] = TargetPart.Position
 						modified = true
 					elseif typeof(arg) == "CFrame" then
-						newArgs[i] = CFrame.new(targetPart.Position)
+						newArgs[i] = CFrame.new(TargetPart.Position)
 						modified = true
 					elseif typeof(arg) == "Ray" then
 						local origin = arg.Origin
-						newArgs[i] = Ray.new(origin, (targetPart.Position - origin).Unit * 100)
+						newArgs[i] = Ray.new(origin, (TargetPart.Position - origin).Unit * 100)
 						modified = true
 					else
 						newArgs[i] = arg
@@ -455,13 +395,13 @@ if not oldNamecall then
 			end
 		end
 		
-		if method == "Raycast" and self == Workspace then
+		if method == "Raycast" and self == workspace then
 			local origin = args[1]
 			local direction = args[2]
 			
-			if origin and targetPart then
+			if origin and TargetPart then
 				if not ShouldHit() then return oldNamecall(self, ...) end
-				local newDir = (targetPart.Position - origin).Unit * direction.Magnitude
+				local newDir = (TargetPart.Position - origin).Unit * direction.Magnitude
 				return oldNamecall(self, origin, newDir, args[3], args[4])
 			end
 		end
@@ -470,56 +410,45 @@ if not oldNamecall then
 	end)
 end
 
---=============================================================================
--- FOV CIRCLE
---=============================================================================
-
-local fovCircle = Drawing.new("Circle")
-fovCircle.Thickness = 2
-fovCircle.NumSides = 100
-fovCircle.Radius = CONFIG.FOVSize
-fovCircle.Filled = false
-fovCircle.Visible = false
-fovCircle.ZIndex = 999
-fovCircle.Color = CONFIG.FOVColor
+if not oldIndex then
+	oldIndex = hookmetamethod(game, "__index", function(self, key)
+		if self == Mouse and CONFIG.SilentAim and TargetPart then
+			local keyLower = string.lower(key)
+			if keyLower == "hit" then
+				if not ShouldHit() then return oldIndex(self, key) end
+				return CFrame.new(TargetPart.Position)
+			elseif keyLower == "target" then
+				return TargetPart
+			end
+		end
+		return oldIndex(self, key)
+	end)
+end
 
 --=============================================================================
 -- RENDER LOOP
 --=============================================================================
 
-RunService.RenderStepped:Connect(function()
-	if not CONFIG.Enabled then
-		LockedTarget = nil
-		return
-	end
-	
-	local now = tick()
-	
-	if now - LastTargetCheck > TARGET_CHECK_INTERVAL then
-		LastTargetCheck = now
-		
-		if ShouldSwitchTarget() then
-			LockedTarget = GetClosestTarget()
+task.spawn(function()
+	while true do
+		task.wait(CONFIG.UpdateRate)
+		if CONFIG.SilentAim then
+			CurrentTarget = GetTarget()
+		else
+			CurrentTarget = nil
+			TargetInRange = false
+			TargetPart = nil
 		end
 	end
-	
-	-- Update FOV circle
-	local center = GetScreenCenter()
-	fovCircle.Position = center
-	fovCircle.Visible = CONFIG.Enabled
-	fovCircle.Radius = CONFIG.FOVSize
-	fovCircle.Color = CONFIG.FOVColor
 end)
 
-Players.PlayerRemoving:Connect(function(player)
-	for char, _ in pairs(PlayerCache) do
-		if Players:GetPlayerFromCharacter(char) == player then
-			PlayerCache[char] = nil
-			VelocityCache[char] = nil
-			if LockedTarget == char then
-				LockedTarget = nil
-			end
-		end
+RunService.RenderStepped:Connect(function()
+	Circle.Visible = CONFIG.SilentAim
+	if CONFIG.SilentAim then
+		local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+		Circle.Position = screenCenter
+		Circle.Radius = CONFIG.FOV
+		Circle.Color = CONFIG.FOVColor
 	end
 end)
 
@@ -527,9 +456,9 @@ end)
 -- PUBLIC API
 --=============================================================================
 
-local SilentAimAPI = {}
+local RoundWarSilentAimAPI = {}
 
-function SilentAimAPI:UpdateConfig(newConfig)
+function RoundWarSilentAimAPI:UpdateConfig(newConfig)
 	for key, value in pairs(newConfig) do
 		if CONFIG[key] ~= nil then
 			CONFIG[key] = value
@@ -537,21 +466,23 @@ function SilentAimAPI:UpdateConfig(newConfig)
 	end
 end
 
-function SilentAimAPI:GetConfig()
+function RoundWarSilentAimAPI:GetConfig()
 	return CONFIG
 end
 
-function SilentAimAPI:Toggle(state)
-	CONFIG.Enabled = state
+function RoundWarSilentAimAPI:Toggle(state)
+	CONFIG.SilentAim = state
 	if not state then
-		LockedTarget = nil
+		CurrentTarget = nil
+		TargetInRange = false
+		TargetPart = nil
 	end
 end
 
-function SilentAimAPI:Destroy()
-	fovCircle:Remove()
-	VelocityCache = {}
-	LockedTarget = nil
+function RoundWarSilentAimAPI:Destroy()
+	Circle:Remove()
+	CurrentTarget = nil
+	TargetPart = nil
 end
 
-return SilentAimAPI
+return RoundWarSilentAimAPI
