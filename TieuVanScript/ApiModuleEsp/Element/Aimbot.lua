@@ -1,7 +1,7 @@
 return function(AimPage, AimbotAPI)
 	local AimSection = AimPage:Section({
 		Name = "Aimbot",
-		Description = "aimbot",
+		Description = "advanced aimbot",
 		Icon = "10709818534",
 		Side = 2
 	})
