@@ -1,12 +1,12 @@
 return function(AimPage, SilentAimAPI)
-	local SilentAimSection = AimPage:Section({
+	local SASection = AimPage:Section({
 		Name = "Silent Aim",
 		Description = "advanced silent aim",
 		Icon = "10709818534",
-		Side = 2
+		Side = 1
 	})
 
-	SilentAimSection:Toggle({
+	SASection:Toggle({
 		Name = "Enable",
 		Flag = "SilentAimEnable",
 		Default = false,
@@ -16,12 +16,12 @@ return function(AimPage, SilentAimAPI)
 		end
 	})
 
-	SilentAimSection:Slider({
+	SASection:Slider({
 		Name = "FOV Size",
 		Flag = "SilentAimFOV",
 		Min = 1,
 		Max = 500,
-		Default = 150,
+		Default = 100,
 		Decimals = 1,
 		Suffix = "px",
 		Callback = function(Value)
@@ -29,7 +29,7 @@ return function(AimPage, SilentAimAPI)
 		end
 	})
 
-	SilentAimSection:Label("FOV Color"):Colorpicker({
+	SASection:Label("FOV Color"):Colorpicker({
 		Name = "FOV Color",
 		Flag = "SilentAimFOVColor",
 		Default = Color3.fromRGB(255, 255, 255),
@@ -38,7 +38,7 @@ return function(AimPage, SilentAimAPI)
 		end
 	})
 
-	SilentAimSection:Slider({
+	SASection:Slider({
 		Name = "Hit Chance",
 		Flag = "SilentAimHitChance",
 		Min = 0,
@@ -47,58 +47,14 @@ return function(AimPage, SilentAimAPI)
 		Decimals = 1,
 		Suffix = "%",
 		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({HitChance = Value})
+			SilentAimAPI:UpdateConfig({HitChance = math.floor(Value)})
 		end
 	})
 
-	SilentAimSection:Slider({
-		Name = "Prediction",
-		Flag = "SilentAimPrediction",
-		Min = 0,
-		Max = 1,
-		Default = 0.165,
-		Decimals = 0.001,
-		Suffix = "x",
-		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({Prediction = Value})
-		end
-	})
-
-	SilentAimSection:Slider({
-		Name = "Update Rate",
-		Flag = "SilentAimUpdateRate",
-		Min = 0.01,
-		Max = 0.5,
-		Default = 0.1,
-		Decimals = 0.01,
-		Suffix = "s",
-		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({UpdateRate = Value})
-		end
-	})
-
-	SilentAimSection:Toggle({
-		Name = "Team Check",
-		Flag = "SilentAimTeamCheck",
-		Default = true,
-		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({TeamCheck = Value})
-		end
-	})
-
-	SilentAimSection:Toggle({
-		Name = "Visible Check",
-		Flag = "SilentAimVisibleCheck",
-		Default = true,
-		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({VisibleCheck = Value})
-		end
-	})
-
-	SilentAimSection:Dropdown({
+	SASection:Dropdown({
 		Name = "Target Mode",
 		Flag = "SilentAimTargetMode",
-		Default = "NPCs",
+		Default = "Players",
 		Items = {"NPCs", "Players", "Both"},
 		Multi = false,
 		Callback = function(Value)
@@ -110,11 +66,11 @@ return function(AimPage, SilentAimAPI)
 		end
 	})
 
-	SilentAimSection:Dropdown({
+	SASection:Dropdown({
 		Name = "Aim Part",
 		Flag = "SilentAimPart",
 		Default = "Head",
-		Items = {"Head", "Torso", "Random", "Both"},
+		Items = {"Head", "Torso"},
 		Multi = false,
 		Callback = function(Value)
 			if type(Value) == "table" then
@@ -125,10 +81,10 @@ return function(AimPage, SilentAimAPI)
 		end
 	})
 
-	SilentAimSection:Dropdown({
+	SASection:Dropdown({
 		Name = "Target Priority",
-		Flag = "SilentAimPriority",
-		Default = "Distance",
+		Flag = "SilentAimTargetPriority",
+		Default = "Crosshair",
 		Items = {"Crosshair", "Distance", "LowestHP"},
 		Multi = false,
 		Callback = function(Value)
@@ -140,7 +96,16 @@ return function(AimPage, SilentAimAPI)
 		end
 	})
 
-	SilentAimSection:Toggle({
+	SASection:Toggle({
+		Name = "Team Check",
+		Flag = "SilentAimTeamCheck",
+		Default = false,
+		Callback = function(Value)
+			SilentAimAPI:UpdateConfig({TeamCheck = Value})
+		end
+	})
+
+	SASection:Toggle({
 		Name = "Team Check (NPCs)",
 		Flag = "SilentAimTeamCheckNPC",
 		Default = false,
@@ -149,16 +114,82 @@ return function(AimPage, SilentAimAPI)
 		end
 	})
 
-	SilentAimSection:Toggle({
-		Name = "Sticky Aim",
-		Flag = "SilentAimStickyAim",
+	SASection:Toggle({
+		Name = "Wall Check",
+		Flag = "SilentAimWallCheck",
+		Default = true,
+		Callback = function(Value)
+			SilentAimAPI:UpdateConfig({VisibleCheck = Value})
+		end
+	})
+
+	SASection:Toggle({
+		Name = "Lock Target",
+		Flag = "SilentAimLockTarget",
 		Default = true,
 		Callback = function(Value)
 			SilentAimAPI:UpdateConfig({StickyAim = Value})
 		end
 	})
 
-	SilentAimSection:Toggle({
+	SASection:Toggle({
+		Name = "Prediction",
+		Flag = "SilentAimPrediction",
+		Default = true,
+		Callback = function(Value)
+			if Value then
+				SilentAimAPI:UpdateConfig({Prediction = 0.165})
+			else
+				SilentAimAPI:UpdateConfig({Prediction = 0})
+			end
+		end
+	})
+
+	SASection:Slider({
+		Name = "Prediction Factor",
+		Flag = "SilentAimPredictionFactor",
+		Min = 0.01,
+		Max = 1,
+		Default = 0.165,
+		Decimals = 0.01,
+		Suffix = "x",
+		Callback = function(Value)
+			SilentAimAPI:UpdateConfig({Prediction = Value})
+		end
+	})
+
+	SASection:Slider({
+		Name = "Update Rate",
+		Flag = "SilentAimUpdateRate",
+		Min = 0.01,
+		Max = 1,
+		Default = 0.1,
+		Decimals = 0.01,
+		Suffix = "s",
+		Callback = function(Value)
+			SilentAimAPI:UpdateConfig({UpdateRate = Value})
+		end
+	})
+
+	SASection:Toggle({
+		Name = "Auto Fire",
+		Flag = "SilentAimAutoFire",
+		Default = false,
+		Callback = function(Value)
+			SilentAimAPI:UpdateConfig({AutoFire = Value})
+		end
+	})
+
+	SASection:Toggle({
+		Name = "Bullet Teleport",
+		Flag = "SilentAimBulletTeleport",
+		Default = false,
+		Callback = function(Value)
+			SilentAimAPI:UpdateConfig({BulletTeleport = Value})
+		end
+	})
+
+	SASection:Toggle({
 		Name = "Aggressive NPC Detection",
 		Flag = "SilentAimAggressiveNPC",
 		Default = false,
@@ -167,21 +198,12 @@ return function(AimPage, SilentAimAPI)
 		end
 	})
 
-	SilentAimSection:Toggle({
+	SASection:Toggle({
 		Name = "Debug NPCs",
-		Flag = "SilentAimDebugNPCs",
+		Flag = "SilentAimDebugNPC",
 		Default = false,
 		Callback = function(Value)
 			SilentAimAPI:UpdateConfig({DebugNPCs = Value})
-		end
-	})
-
-	SilentAimSection:Toggle({
-		Name = "Bullet Teleport",
-		Flag = "SilentAimBulletTeleport",
-		Default = false,
-		Callback = function(Value)
-			SilentAimAPI:UpdateConfig({BulletTeleport = Value})
 		end
 	})
 end
