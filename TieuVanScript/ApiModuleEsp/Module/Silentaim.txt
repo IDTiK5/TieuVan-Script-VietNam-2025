@@ -18,12 +18,12 @@ local CONFIG = {
 	TeamCheckForNPCs = false,
 	Prediction = 0.165,
 	UpdateRate = 0.1,
-	TargetMode = "Players",
+	TargetMode = "Players", -- "Players", "NPCs", "Both"
 	AimPart = "Head",
 	HitChance = 100,
 	BulletTeleport = false,
 	DebugNPCs = false,
-	AggressiveNPCDetection = false,
+	AggressiveNPCDetection = true, -- ⭐ ĐỔI THÀNH TRUE ĐỂ DETECT NPC TỐT HƠN
 	TargetPriority = "Crosshair",
 	StickyAim = true,
 }
@@ -39,6 +39,7 @@ local CacheUpdateInterval = 2
 local oldNamecall = nil
 local oldIndex = nil
 
+-- ⭐ DANH SÁCH TAG NPC MỞ RỘNG
 local NPCTags = {
 	"NPC", "Npc", "npc", "Enemy", "enemy", "Enemies", "enemies",
 	"Hostile", "hostile", "Bad", "bad", "BadGuy", "badguy",
@@ -68,6 +69,7 @@ local function IsPlayer(character)
 	return player ~= nil
 end
 
+-- ⭐ HÀM DETECT NPC CẢI TIẾN
 local function IsNPC(character)
 	if not character or not character:IsA("Model") then return false end
 	if IsPlayer(character) then return false end
@@ -78,13 +80,18 @@ local function IsNPC(character)
 	
 	if not humanoid or not head or not hrp or humanoid.Health <= 0 then return false end
 	
-	if CONFIG.AggressiveNPCDetection then return true end
+	-- ⭐ CHUYỂN ĐỔI: Ở chế độ mặc định, NPC là bất kỳ Model nào có Humanoid nhưng không phải Player
+	if CONFIG.AggressiveNPCDetection then 
+		return true -- Mọi model với humanoid (không phải player) = NPC
+	end
 	
+	-- ⭐ KIỂM TRA TAG TRONG TÊN
 	local charName = character.Name:lower()
 	for _, tag in pairs(NPCTags) do
 		if charName:find(tag:lower(), 1, true) then return true end
 	end
 	
+	-- ⭐ KIỂM TRA TRONG THƯ MỤC NPC
 	local npcFolders = {"NPCs", "Enemies", "Bots", "Mobs", "Targets", "Enemy", "Hostile",
 		"Monsters", "Zombies", "Creatures", "Characters", "Spawns", "EnemySpawns", "NPCSpawns", "Bosses", "Minions"}
 	
@@ -93,6 +100,14 @@ local function IsNPC(character)
 		if folder and character:IsDescendantOf(folder) then return true end
 	end
 	
+	-- ⭐ KIỂM TRA VALUE (IsNPC, IsEnemy, etc)
+	local npcIndicators = {"NPC", "IsNPC", "IsEnemy", "Hostile"}
+	for _, indicator in pairs(npcIndicators) do
+		local val = character:FindFirstChild(indicator)
+		if val and val:IsA("BoolValue") and val.Value == true then return true end
+	end
+	
+	-- ⭐ NẾU CÓ HUMANOID VÀ KHÔNG PHẢI PLAYER = CÓ LẼ LÀ NPC
 	return true
 end
 
@@ -149,7 +164,6 @@ local function TeleportBulletToTarget(bullet)
 	if not CONFIG.BulletTeleport or not TargetPart then return end
 	if not bullet or not bullet:IsA("BasePart") then return end
 	
-	-- Teleport viên đạn trực tiếp tới target
 	bullet.CFrame = CFrame.new(TargetPart.Position)
 	bullet.Velocity = Vector3.new(0, 0, 0)
 end
@@ -166,6 +180,7 @@ local function UpdateCaches()
 	NPCCache = {}
 	PlayerCache = {}
 	
+	-- ⭐ TÌM TẤT CẢ MODEL TRONG WORKSPACE
 	local allModels = {}
 	for _, model in pairs(workspace:GetChildren()) do
 		if model:IsA("Model") and model ~= LocalPlayer.Character then
@@ -173,7 +188,8 @@ local function UpdateCaches()
 		end
 	end
 	
-	local npcFolders = {"NPCs", "Enemies", "Bots", "Mobs", "Targets", "Characters", "Spawns", "Monsters"}
+	-- ⭐ TÌM NPC TRONG THƯMỤC
+	local npcFolders = {"NPCs", "Enemies", "Bots", "Mobs", "Targets", "Characters", "Spawns", "Monsters", "Zombies", "Enemy", "Hostile", "Bosses", "Minions"}
 	for _, folderName in pairs(npcFolders) do
 		local folder = workspace:FindFirstChild(folderName)
 		if folder then
@@ -184,6 +200,7 @@ local function UpdateCaches()
 		end
 	end
 	
+	-- ⭐ KIỂM TRA TẤT CẢ MODEL
 	for _, model in pairs(allModels) do
 		local hrp = model:FindFirstChild("HumanoidRootPart")
 		local humanoid = model:FindFirstChildOfClass("Humanoid")
@@ -197,6 +214,7 @@ local function UpdateCaches()
 		end
 	end
 	
+	-- ⭐ THÊM PLAYER VÀO CACHE
 	for _, player in pairs(Players:GetPlayers()) do
 		if player ~= LocalPlayer and player.Character then
 			local char = player.Character
