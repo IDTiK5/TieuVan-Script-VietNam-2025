@@ -16,19 +16,27 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	-- ⭐ DROPDOWN MODE (ĐÚNG FORMAT)
 	Section:Dropdown({
 		Name = "Target Mode",
-		Flag = "NPCModeDropdown",
-		Default = "Both",
+		Flag = "TargetMode",
+		Default = "Players",
 		Items = {"Players", "NPCs", "Both"},
 		Multi = false,
 		Callback = function(Value)
+			local mode = Value
 			if type(Value) == "table" then
-				BoxESPAPI:UpdateConfig({NPCMode = Value[1]})
-			else
-				BoxESPAPI:UpdateConfig({NPCMode = Value})
+				mode = Value[1]
 			end
+			BoxESPAPI:UpdateConfig({TargetMode = mode})
+		end
+	})
+
+	Section:Toggle({
+		Name = "Aggressive NPC Detection",
+		Flag = "AggressiveNPCDetection",
+		Default = false,
+		Callback = function(Value)
+			BoxESPAPI:UpdateConfig({AggressiveNPCDetection = Value})
 		end
 	})
 
@@ -112,7 +120,7 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	Section:Colorpicker({
+	Section:Label("Box Color"):Colorpicker({
 		Name = "Box Color",
 		Flag = "BoxColor",
 		Default = Color3.fromRGB(255, 255, 255),
@@ -121,7 +129,7 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	Section:Colorpicker({
+	Section:Label("Self Box Color"):Colorpicker({
 		Name = "Self Box Color",
 		Flag = "SelfBoxColor",
 		Default = Color3.fromRGB(255, 255, 255),
@@ -130,16 +138,7 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	Section:Colorpicker({
-		Name = "NPC Box Color",
-		Flag = "NPCBoxColor",
-		Default = Color3.fromRGB(255, 100, 0),
-		Callback = function(Value)
-			BoxESPAPI:UpdateConfig({NPCBoxColor = Value})
-		end
-	})
-
-	Section:Colorpicker({
+	Section:Label("Enemy Color"):Colorpicker({
 		Name = "Enemy Color",
 		Flag = "EnemyColor",
 		Default = Color3.fromRGB(255, 0, 0),
@@ -148,7 +147,7 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	Section:Colorpicker({
+	Section:Label("Allied Color"):Colorpicker({
 		Name = "Allied Color",
 		Flag = "AlliedColor",
 		Default = Color3.fromRGB(0, 255, 0),
@@ -157,7 +156,16 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	Section:Colorpicker({
+	Section:Label("NPC Color"):Colorpicker({
+		Name = "NPC Color",
+		Flag = "NPCColor",
+		Default = Color3.fromRGB(255, 165, 0),
+		Callback = function(Value)
+			BoxESPAPI:UpdateConfig({NPCBoxColor = Value})
+		end
+	})
+
+	Section:Label("No Team Color"):Colorpicker({
 		Name = "No Team Color",
 		Flag = "NoTeamColor",
 		Default = Color3.fromRGB(255, 255, 255),
@@ -223,7 +231,7 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	Section:Colorpicker({
+	Section:Label("Gradient Color 1"):Colorpicker({
 		Name = "Gradient Color 1",
 		Flag = "GradientColor1",
 		Default = Color3.fromRGB(255, 86, 0),
@@ -232,28 +240,12 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	Section:Colorpicker({
+	Section:Label("Gradient Color 2"):Colorpicker({
 		Name = "Gradient Color 2",
 		Flag = "GradientColor2",
 		Default = Color3.fromRGB(255, 0, 128),
 		Callback = function(Value)
 			BoxESPAPI:UpdateConfig({GradientColor2 = Value})
-		end
-	})
-
-	local NPCSection = EspPage:Section({
-		Name = "NPC Settings",
-		Description = "Configure NPC detection",
-		Icon = "12053927543",
-		Side = 1
-	})
-
-	NPCSection:Toggle({
-		Name = "Aggressive NPC Detection",
-		Flag = "AggressiveNPCDetection",
-		Default = true,
-		Callback = function(Value)
-			BoxESPAPI:UpdateConfig({AggressiveNPCDetection = Value})
 		end
 	})
 end
