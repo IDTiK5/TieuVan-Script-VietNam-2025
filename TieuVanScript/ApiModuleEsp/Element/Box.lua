@@ -16,7 +16,7 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	-- ⭐ THÊM DROPDOWN MODE
+	-- ⭐ DROPDOWN MODE (ĐÚNG FORMAT)
 	Section:Dropdown({
 		Name = "Target Mode",
 		Flag = "NPCModeDropdown",
@@ -112,7 +112,7 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	Section:Label("Box Color"):Colorpicker({
+	Section:Colorpicker({
 		Name = "Box Color",
 		Flag = "BoxColor",
 		Default = Color3.fromRGB(255, 255, 255),
@@ -121,7 +121,7 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	Section:Label("Self Box Color"):Colorpicker({
+	Section:Colorpicker({
 		Name = "Self Box Color",
 		Flag = "SelfBoxColor",
 		Default = Color3.fromRGB(255, 255, 255),
@@ -130,8 +130,7 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	-- ⭐ THÊM MÀU NPC BOX
-	Section:Label("NPC Box Color"):Colorpicker({
+	Section:Colorpicker({
 		Name = "NPC Box Color",
 		Flag = "NPCBoxColor",
 		Default = Color3.fromRGB(255, 100, 0),
@@ -140,7 +139,7 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	Section:Label("Enemy Color"):Colorpicker({
+	Section:Colorpicker({
 		Name = "Enemy Color",
 		Flag = "EnemyColor",
 		Default = Color3.fromRGB(255, 0, 0),
@@ -149,7 +148,7 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	Section:Label("Allied Color"):Colorpicker({
+	Section:Colorpicker({
 		Name = "Allied Color",
 		Flag = "AlliedColor",
 		Default = Color3.fromRGB(0, 255, 0),
@@ -158,7 +157,7 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	Section:Label("No Team Color"):Colorpicker({
+	Section:Colorpicker({
 		Name = "No Team Color",
 		Flag = "NoTeamColor",
 		Default = Color3.fromRGB(255, 255, 255),
@@ -224,7 +223,7 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	Section:Label("Gradient Color 1"):Colorpicker({
+	Section:Colorpicker({
 		Name = "Gradient Color 1",
 		Flag = "GradientColor1",
 		Default = Color3.fromRGB(255, 86, 0),
@@ -233,7 +232,7 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	Section:Label("Gradient Color 2"):Colorpicker({
+	Section:Colorpicker({
 		Name = "Gradient Color 2",
 		Flag = "GradientColor2",
 		Default = Color3.fromRGB(255, 0, 128),
@@ -242,7 +241,6 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	-- ⭐ THÊM SECTION NPC
 	local NPCSection = EspPage:Section({
 		Name = "NPC Settings",
 		Description = "Configure NPC detection",
