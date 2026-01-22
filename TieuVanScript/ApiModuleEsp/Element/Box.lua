@@ -16,30 +16,6 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
-	Section:Dropdown({
-		Name = "Target Mode",
-		Flag = "TargetMode",
-		Default = "Players",
-		Items = {"Players", "NPCs", "Both"},
-		Multi = false,
-		Callback = function(Value)
-			local mode = Value
-			if type(Value) == "table" then
-				mode = Value[1]
-			end
-			BoxESPAPI:UpdateConfig({TargetMode = mode})
-		end
-	})
-
-	Section:Toggle({
-		Name = "Aggressive NPC Detection",
-		Flag = "AggressiveNPCDetection",
-		Default = false,
-		Callback = function(Value)
-			BoxESPAPI:UpdateConfig({AggressiveNPCDetection = Value})
-		end
-	})
-
 	Section:Toggle({
 		Name = "Show Self Box",
 		Flag = "ShowSelfBox",
@@ -153,15 +129,6 @@ return function(EspPage, BoxESPAPI)
 		Default = Color3.fromRGB(0, 255, 0),
 		Callback = function(Value)
 			BoxESPAPI:UpdateConfig({AlliedBoxColor = Value})
-		end
-	})
-
-	Section:Label("NPC Color"):Colorpicker({
-		Name = "NPC Color",
-		Flag = "NPCColor",
-		Default = Color3.fromRGB(255, 165, 0),
-		Callback = function(Value)
-			BoxESPAPI:UpdateConfig({NPCBoxColor = Value})
 		end
 	})
 
