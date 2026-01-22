@@ -9,43 +9,25 @@ local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
---=============================================================================
--- CONFIG
---=============================================================================
-
 local CONFIG = {
-	SilentAim = true,
+	SilentAim = false,
 	FOV = 150,
+	FOVColor = Color3.fromRGB(255, 255, 255),
 	VisibleCheck = true,
-	TeamCheck = true,
+	TeamCheck = false,
 	TeamCheckForNPCs = false,
 	Prediction = 0.165,
 	UpdateRate = 0.1,
-	TargetMode = "NPCs",
+	TargetMode = "Players",
 	AimPart = "Head",
 	HitChance = 100,
 	BulletTeleport = false,
 	DebugNPCs = false,
 	AggressiveNPCDetection = false,
-	TargetPriority = "Distance",
+	TargetPriority = "Crosshair",
 	StickyAim = true,
+	AutoFire = false,
 }
-
---=============================================================================
--- DRAWING
---=============================================================================
-
-local Circle = Drawing.new("Circle")
-Circle.Color = Color3.fromRGB(255, 255, 255)
-Circle.Thickness = 2
-Circle.Visible = false
-Circle.Radius = CONFIG.FOV
-Circle.Transparency = 0.7
-Circle.Filled = false
-
---=============================================================================
--- STATE
---=============================================================================
 
 local CurrentTarget = nil
 local TargetPart = nil
@@ -58,50 +40,22 @@ local CacheUpdateInterval = 2
 local oldNamecall = nil
 local oldIndex = nil
 
---=============================================================================
--- NPC TAGS
---=============================================================================
-
 local NPCTags = {
-	"NPC", "Npc", "npc",
-	"Enemy", "enemy", "Enemies", "enemies",
+	"NPC", "Npc", "npc", "Enemy", "enemy", "Enemies", "enemies",
 	"Hostile", "hostile", "Bad", "bad", "BadGuy", "badguy",
-	"Foe", "foe", "Opponent", "opponent",
-	"Bot", "bot", "Bots", "bots",
-	"Mob", "mob", "Mobs", "mobs",
-	"Monster", "monster", "Monsters", "monsters",
-	"Zombie", "zombie", "Zombies", "zombies",
-	"Creature", "creature", "Animal", "animal", "Beast", "beast",
-	"Villain", "villain", "Villian", "villian",
-	"Boss", "boss", "MiniBoss", "miniboss",
-	"Guard", "guard", "Guardian", "guardian",
-	"Soldier", "soldier", "Warrior", "warrior",
-	"Fighter", "fighter",
-	"Target", "target",
-	"Dummy", "dummy", "Dummies", "dummies",
-	"Practice", "practice", "Training", "training",
-	"Skeleton", "skeleton",
-	"Orc", "orc", "Goblin", "goblin",
-	"Troll", "troll", "Ogre", "ogre",
-	"Demon", "demon", "Devil", "devil",
-	"Ghost", "ghost", "Spirit", "spirit",
-	"Vampire", "vampire", "Werewolf", "werewolf",
-	"Dragon", "dragon", "Wyvern", "wyvern",
-	"Gang", "gang", "Thug", "thug",
-	"Bandit", "bandit", "Raider", "raider",
-	"Pirate", "pirate", "Corsair", "corsair",
-	"Agent", "agent", "Assassin", "assassin",
-	"Mercenary", "mercenary", "Hunter", "hunter",
-	"Robot", "robot", "Drone", "drone",
-	"Android", "android", "Cyborg", "cyborg",
-	"Automaton", "automaton",
-	"Servant", "servant", "Minion", "minion",
-	"Slave", "slave", "Pawn", "pawn",
-	"AI", "ai", "A.I.",
-	"Char", "char", "Character", "character",
-	"Model", "model",
-	"Event", "event", "Special", "special",
-	"Holiday", "holiday", "Seasonal", "seasonal",
+	"Foe", "foe", "Opponent", "opponent", "Bot", "bot", "Bots", "bots",
+	"Mob", "mob", "Mobs", "mobs", "Monster", "monster", "Monsters", "monsters",
+	"Zombie", "zombie", "Zombies", "zombies", "Creature", "creature",
+	"Animal", "animal", "Beast", "beast", "Villain", "villain",
+	"Boss", "boss", "MiniBoss", "miniboss", "Guard", "guard",
+	"Guardian", "guardian", "Soldier", "soldier", "Warrior", "warrior",
+	"Fighter", "fighter", "Target", "target", "Dummy", "dummy",
+	"Dummies", "dummies", "Skeleton", "skeleton", "Orc", "orc",
+	"Goblin", "goblin", "Robot", "robot", "Drone", "drone",
+	"Android", "android", "Cyborg", "cyborg", "Automaton", "automaton",
+	"Servant", "servant", "Minion", "minion", "Slave", "slave", "Pawn", "pawn",
+	"AI", "ai", "A.I.", "Char", "char", "Character", "character",
+	"Model", "model", "Event", "event", "Special", "special",
 }
 
 --=============================================================================
@@ -109,128 +63,35 @@ local NPCTags = {
 --=============================================================================
 
 local function IsPlayer(character)
-	if not character or not character:IsA("Model") then
-		return false
-	end
-	if character == LocalPlayer.Character then
-		return true
-	end
+	if not character or not character:IsA("Model") then return false end
+	if character == LocalPlayer.Character then return true end
 	local player = Players:GetPlayerFromCharacter(character)
 	return player ~= nil
 end
 
 local function IsNPC(character)
-	if not character or not character:IsA("Model") then
-		return false
-	end
-	
-	if IsPlayer(character) then
-		return false
-	end
+	if not character or not character:IsA("Model") then return false end
+	if IsPlayer(character) then return false end
 	
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
 	local head = character:FindFirstChild("Head")
 	local hrp = character:FindFirstChild("HumanoidRootPart")
 	
-	if not humanoid or not head or not hrp or humanoid.Health <= 0 then
-		return false
-	end
+	if not humanoid or not head or not hrp or humanoid.Health <= 0 then return false end
 	
-	if CONFIG.AggressiveNPCDetection then
-		return true
-	end
+	if CONFIG.AggressiveNPCDetection then return true end
 	
 	local charName = character.Name:lower()
-	
 	for _, tag in pairs(NPCTags) do
-		if charName:find(tag:lower(), 1, true) then
-			return true
-		end
+		if charName:find(tag:lower(), 1, true) then return true end
 	end
 	
-	local npcFolders = {
-		"NPCs", "Enemies", "Bots", "Mobs", "Targets", "Enemy", "Hostile",
-		"Monsters", "Zombies", "Creatures", "Characters", "Spawns",
-		"EnemySpawns", "NPCSpawns", "Bosses", "Minions"
-	}
+	local npcFolders = {"NPCs", "Enemies", "Bots", "Mobs", "Targets", "Enemy", "Hostile",
+		"Monsters", "Zombies", "Creatures", "Characters", "Spawns", "EnemySpawns", "NPCSpawns", "Bosses", "Minions"}
 	
 	for _, folderName in pairs(npcFolders) do
 		local folder = workspace:FindFirstChild(folderName)
-		if folder and character:IsDescendantOf(folder) then
-			return true
-		end
-	end
-	
-	local possibleNPCIndicators = {
-		"NPC", "IsNPC", "IsEnemy", "Hostile", "Enemy", 
-		"IsBot", "IsMob", "IsMonster", "Team", "Faction"
-	}
-	
-	for _, indicator in pairs(possibleNPCIndicators) do
-		local value = character:FindFirstChild(indicator)
-		if value then
-			if value:IsA("BoolValue") then
-				if indicator == "NPC" or indicator == "IsNPC" or 
-				   indicator == "IsEnemy" or indicator == "Hostile" then
-					if value.Value == true then
-						return true
-					end
-				end
-			elseif value:IsA("StringValue") then
-				local valLower = value.Value:lower()
-				if valLower == "enemy" or valLower == "hostile" or 
-				   valLower == "npc" or valLower == "bot" or
-				   valLower == "monster" or valLower == "mob" then
-					return true
-				end
-			elseif value:IsA("IntValue") then
-				if indicator == "Team" then
-					return true
-				end
-			end
-		end
-	end
-	
-	local hasAIBehavior = false
-	for _, child in pairs(character:GetChildren()) do
-		local childName = child.Name:lower()
-		if child:IsA("Script") or child:IsA("LocalScript") then
-			if childName:find("ai") or childName:find("behavior") or 
-			   childName:find("path") or childName:find("attack") or
-			   childName:find("patrol") or childName:find("combat") then
-				hasAIBehavior = true
-				break
-			end
-		end
-	end
-	
-	local tags = CollectionService:GetTags(character)
-	for _, tag in pairs(tags) do
-		local tagLower = tag:lower()
-		for _, npcTag in pairs(NPCTags) do
-			if tagLower:find(npcTag:lower(), 1, true) then
-				return true
-			end
-		end
-	end
-	
-	local npcAbilities = {"Attack", "Damage", "Aggro", "Patrol", "Spawn", "Respawn", "AI", "BehaviorTree"}
-	for _, ability in pairs(npcAbilities) do
-		if character:FindFirstChild(ability) or character:FindFirstChild(ability .. "Script") then
-			hasAIBehavior = true
-			break
-		end
-	end
-	
-	if hasAIBehavior then
-		return true
-	end
-	
-	local namePatterns = {"^npc_", "^enemy_", "^bot_", "^mob_", "_npc$", "_enemy$", "_bot$"}
-	for _, pattern in pairs(namePatterns) do
-		if string.match(charName, pattern) then
-			return true
-		end
+		if folder and character:IsDescendantOf(folder) then return true end
 	end
 	
 	return true
@@ -238,14 +99,10 @@ end
 
 local function FindNPCsInWorkspaceRecursive(parent)
 	local foundNPCs = {}
-	
 	for _, child in pairs(parent:GetChildren()) do
-		if child:IsA("Model") then
-			if IsNPC(child) then
-				table.insert(foundNPCs, child)
-			end
+		if child:IsA("Model") and IsNPC(child) then
+			table.insert(foundNPCs, child)
 		end
-		
 		if not child:IsA("BasePart") and not child:IsA("Decal") and not child:IsA("Texture") then
 			local subNPCs = FindNPCsInWorkspaceRecursive(child)
 			for _, npc in pairs(subNPCs) do
@@ -253,46 +110,26 @@ local function FindNPCsInWorkspaceRecursive(parent)
 			end
 		end
 	end
-	
 	return foundNPCs
 end
 
 local function IsEnemyPlayer(player)
-	if not CONFIG.TeamCheck then
-		return true
-	end
-	
-	if not player then
-		return false
-	end
-	
-	if not LocalPlayer.Team or not player.Team then
-		return true
-	end
-	
+	if not CONFIG.TeamCheck then return true end
+	if not player then return false end
+	if not LocalPlayer.Team or not player.Team then return true end
 	return LocalPlayer.Team ~= player.Team
 end
 
 local function IsEnemyNPC(npcModel)
-	if not CONFIG.TeamCheckForNPCs then
-		return true
-	end
-	
+	if not CONFIG.TeamCheckForNPCs then return true end
 	local npcTeamValue = npcModel:FindFirstChild("Team")
 	if npcTeamValue and npcTeamValue:IsA("StringValue") then
 		local npcTeam = npcTeamValue.Value
 		local localTeam = LocalPlayer.Team and LocalPlayer.Team.Name or ""
-		
-		if npcTeam and localTeam and npcTeam ~= localTeam then
-			return true
-		end
+		if npcTeam and localTeam and npcTeam ~= localTeam then return true end
 	end
-	
 	local isEnemy = npcModel:FindFirstChild("IsEnemy")
-	if isEnemy and isEnemy:IsA("BoolValue") and isEnemy.Value == true then
-		return true
-	end
-	
+	if isEnemy and isEnemy:IsA("BoolValue") and isEnemy.Value == true then return true end
 	return true
 end
 
@@ -301,94 +138,88 @@ local function GetTargetPart(character)
 		return character:FindFirstChild("Head")
 	elseif CONFIG.AimPart == "Torso" then
 		return character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso") or character:FindFirstChild("HumanoidRootPart")
-	elseif CONFIG.AimPart == "Random" then
-		local parts = {
-			character:FindFirstChild("Head"),
-			character:FindFirstChild("UpperTorso"),
-			character:FindFirstChild("Torso"),
-			character:FindFirstChild("HumanoidRootPart")
-		}
-		for _, part in pairs(parts) do
-			if part then return part end
-		end
-	elseif CONFIG.AimPart == "Both" then
-		local head = character:FindFirstChild("Head")
-		local torso = character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso") or character:FindFirstChild("HumanoidRootPart")
-		if head and torso then
-			return tick() % 1 > 0.5 and head or torso
-		elseif head then
-			return head
-		elseif torso then
-			return torso
-		end
 	end
-	
 	return character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Head")
 end
 
-local function CalculateHitChanceDisplay()
-	if not CurrentTarget or not TargetPart then
-		return 0
+--=============================================================================
+-- AUTO FIRE FUNCTION
+--=============================================================================
+
+local function TriggerAutoFire()
+	if not CONFIG.AutoFire or not TargetPart or not CurrentTarget then return end
+	
+	-- Tìm weapon hoặc fire remote
+	local backpack = LocalPlayer:FindFirstChild("Backpack")
+	if backpack then
+		for _, tool in pairs(backpack:GetChildren()) do
+			if tool:IsA("Tool") then
+				local fireFunc = tool:FindFirstChild("Fire") or tool:FindFirstChild("Shoot") or tool:FindFirstChild("Attack")
+				if fireFunc and fireFunc:IsA("RemoteEvent") then
+					fireFunc:FireServer(TargetPart)
+				elseif fireFunc and fireFunc:IsA("RemoteFunction") then
+					fireFunc:InvokeServer(TargetPart)
+				end
+				break
+			end
+		end
 	end
-	local baseChance = CONFIG.HitChance
-	local distanceFactor = 1.0
-	local fovFactor = 1.0
 	
-	if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-		local localPos = LocalPlayer.Character.HumanoidRootPart.Position
-		local targetPos = TargetPart.Position
-		local distance = (targetPos - localPos).Magnitude
-		
-		if distance < 50 then distanceFactor = 1.1 
-		elseif distance > 200 then distanceFactor = 0.8 end
+	-- Hoặc tìm trong character
+	local character = LocalPlayer.Character
+	if character then
+		for _, tool in pairs(character:GetChildren()) do
+			if tool:IsA("Tool") then
+				local fireFunc = tool:FindFirstChild("Fire") or tool:FindFirstChild("Shoot") or tool:FindFirstChild("Attack")
+				if fireFunc and fireFunc:IsA("RemoteEvent") then
+					fireFunc:FireServer(TargetPart)
+				elseif fireFunc and fireFunc:IsA("RemoteFunction") then
+					fireFunc:InvokeServer(TargetPart)
+				end
+				break
+			end
+		end
 	end
-	
-	if CONFIG.FOV < 100 then fovFactor = 1.15 elseif CONFIG.FOV > 250 then fovFactor = 0.9 end
-	local finalChance = baseChance * distanceFactor * fovFactor
-	local randomVariation = math.random(-5, 5)
-	finalChance = math.clamp(finalChance + randomVariation, 1, 100)
-	
-	return math.floor(finalChance)
 end
+
+--=============================================================================
+-- BULLET TELEPORT FUNCTION
+--=============================================================================
+
+local function TeleportBulletToTarget(bullet)
+	if not CONFIG.BulletTeleport or not TargetPart then return end
+	if not bullet or not bullet:IsA("BasePart") then return end
+	
+	-- Teleport viên đạn trực tiếp tới target
+	bullet.CFrame = CFrame.new(TargetPart.Position)
+	bullet.Velocity = Vector3.new(0, 0, 0)
+end
+
+--=============================================================================
+-- CACHE & VALIDATION
+--=============================================================================
 
 local function UpdateCaches()
 	local currentTime = tick()
-	
-	if currentTime - LastCacheUpdate < CacheUpdateInterval then
-		return
-	end
-	
+	if currentTime - LastCacheUpdate < CacheUpdateInterval then return end
 	LastCacheUpdate = currentTime
 	
 	NPCCache = {}
 	PlayerCache = {}
 	
 	local allModels = {}
-	
 	for _, model in pairs(workspace:GetChildren()) do
 		if model:IsA("Model") and model ~= LocalPlayer.Character then
 			table.insert(allModels, model)
 		end
 	end
 	
-	local npcFolders = {"NPCs", "Enemies", "Bots", "Mobs", "Targets", 
-						"Characters", "Spawns", "Monsters", "Zombies",
-						"Enemy", "Hostile", "Bosses", "Minions", "Creatures"}
-	
+	local npcFolders = {"NPCs", "Enemies", "Bots", "Mobs", "Targets", "Characters", "Spawns", "Monsters"}
 	for _, folderName in pairs(npcFolders) do
 		local folder = workspace:FindFirstChild(folderName)
 		if folder then
 			local npcsInFolder = FindNPCsInWorkspaceRecursive(folder)
 			for _, npc in pairs(npcsInFolder) do
-				table.insert(allModels, npc)
-			end
-		end
-	end
-	
-	if CONFIG.AggressiveNPCDetection then
-		local allNPCs = FindNPCsInWorkspaceRecursive(workspace)
-		for _, npc in pairs(allNPCs) do
-			if npc ~= LocalPlayer.Character then
 				table.insert(allModels, npc)
 			end
 		end
@@ -400,20 +231,9 @@ local function UpdateCaches()
 		
 		if hrp and humanoid and humanoid.Health > 0 then
 			if IsPlayer(model) then
-				PlayerCache[model] = {
-					Model = model,
-					HRP = hrp,
-					Humanoid = humanoid,
-					Player = Players:GetPlayerFromCharacter(model),
-					IsNPC = false
-				}
+				PlayerCache[model] = {Model = model, HRP = hrp, Humanoid = humanoid, Player = Players:GetPlayerFromCharacter(model), IsNPC = false}
 			elseif IsNPC(model) then
-				NPCCache[model] = {
-					Model = model,
-					HRP = hrp,
-					Humanoid = humanoid,
-					IsNPC = true
-				}
+				NPCCache[model] = {Model = model, HRP = hrp, Humanoid = humanoid, IsNPC = true}
 			end
 		end
 	end
@@ -423,47 +243,26 @@ local function UpdateCaches()
 			local char = player.Character
 			local hrp = char:FindFirstChild("HumanoidRootPart")
 			local humanoid = char:FindFirstChildOfClass("Humanoid")
-			
 			if hrp and humanoid and humanoid.Health > 0 then
-				PlayerCache[char] = {
-					Model = char,
-					HRP = hrp,
-					Humanoid = humanoid,
-					Player = player,
-					IsNPC = false
-				}
+				PlayerCache[char] = {Model = char, HRP = hrp, Humanoid = humanoid, Player = player, IsNPC = false}
 			end
 		end
 	end
-	
-	local seen = {}
-	local newNPCCache = {}
-	for model, data in pairs(NPCCache) do
-		if not seen[model] then
-			seen[model] = true
-			newNPCCache[model] = data
-		end
-	end
-	NPCCache = newNPCCache
 end
 
 local function ValidateCurrentTarget()
 	if not CurrentTarget or not TargetPart then return false end
-	
 	local humanoid = CurrentTarget:FindFirstChildOfClass("Humanoid")
 	local hrp = CurrentTarget:FindFirstChild("HumanoidRootPart")
-	
 	if not humanoid or humanoid.Health <= 0 or not hrp then return false end
 	
 	local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 	local targetPos = TargetPart.Position
 	local screenPos, onScreen = Camera:WorldToViewportPoint(targetPos)
-	
 	if not onScreen then return false end
 	
 	local screenPoint = Vector2.new(screenPos.X, screenPos.Y)
 	local dist = (screenPoint - screenCenter).Magnitude
-	
 	if dist > CONFIG.FOV then return false end
 	
 	if CONFIG.VisibleCheck then
@@ -475,17 +274,14 @@ local function ValidateCurrentTarget()
 		local origin = Camera.CFrame.Position
 		local direction = (targetPos - origin).Unit * (targetPos - origin).Magnitude
 		local ray = workspace:Raycast(origin, direction, raycastParams)
-		
-		if ray then
-			local hitPart = ray.Instance
-			if not hitPart:IsDescendantOf(CurrentTarget) then
-				return false
-			end
-		end
+		if ray and not ray.Instance:IsDescendantOf(CurrentTarget) then return false end
 	end
-	
 	return true
 end
+
+--=============================================================================
+-- TARGET SELECTION
+--=============================================================================
 
 local function GetTarget()
 	if not LocalPlayer.Character then 
@@ -515,7 +311,6 @@ local function GetTarget()
 	
 	TargetInRange = false
 	TargetPart = nil
-	
 	if not localRoot then return nil end
 	
 	local function ProcessTarget(data, isPlayer)
@@ -533,13 +328,11 @@ local function GetTarget()
 			if not targetPart then targetPart = hrp end
 			
 			local targetPos = targetPart.Position
-			
 			if hrp.Velocity.Magnitude > 1 and CONFIG.Prediction > 0 then
 				targetPos = targetPos + (hrp.Velocity * CONFIG.Prediction)
 			end
 			
 			local screenPos, onScreen = Camera:WorldToViewportPoint(targetPos)
-			
 			if onScreen then
 				local screenPoint = Vector2.new(screenPos.X, screenPos.Y)
 				local distFromCenter = (screenPoint - screenCenter).Magnitude
@@ -557,18 +350,13 @@ local function GetTarget()
 						local direction = (targetPos - origin).Unit * (targetPos - origin).Magnitude
 						local ray = workspace:Raycast(origin, direction, raycastParams)
 						
-						if ray then
-							local hitPart = ray.Instance
-							local isTargetPart = hitPart:IsDescendantOf(data.Model)
-							if not isTargetPart then isVisible = false end
-						end
+						if ray and not ray.Instance:IsDescendantOf(data.Model) then isVisible = false end
 					end
 					
 					TargetInRange = true
 					
 					if isVisible or not CONFIG.VisibleCheck then
 						local currentScore = 0
-						
 						if CONFIG.TargetPriority == "Crosshair" then
 							currentScore = distFromCenter
 						elseif CONFIG.TargetPriority == "Distance" then
@@ -602,24 +390,29 @@ local function GetTarget()
 	return closestTarget
 end
 
+--=============================================================================
+-- FOV CIRCLE
+--=============================================================================
+
+local Circle = Drawing.new("Circle")
+Circle.Color = CONFIG.FOVColor
+Circle.Thickness = 2
+Circle.Visible = false
+Circle.Radius = CONFIG.FOV
+Circle.Transparency = 0.7
+Circle.Filled = false
+
+--=============================================================================
+-- HIT CHANCE & HOOKS
+--=============================================================================
+
 local function ShouldHit()
-	if CONFIG.HitChance >= 100 then
-		return true
-	end
-	if CONFIG.HitChance <= 0 then
-		return false
-	end
-	local randomNumber = math.random(1, 100)
-	return randomNumber <= CONFIG.HitChance
+	if CONFIG.HitChance >= 100 then return true end
+	if CONFIG.HitChance <= 0 then return false end
+	return math.random(1, 100) <= CONFIG.HitChance
 end
 
---=============================================================================
--- HOOKS
---=============================================================================
-
-local function InstallHooks()
-	if oldNamecall then return end
-	
+if not oldNamecall then
 	oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
 		if not CONFIG.SilentAim or not TargetPart or not CurrentTarget then
 			return oldNamecall(self, ...)
@@ -631,9 +424,7 @@ local function InstallHooks()
 		if (method == "FireServer" or method == "InvokeServer") and typeof(self) == "Instance" then
 			local selfName = self.Name:lower()
 			if string.find(selfName, "fire") or string.find(selfName, "hit") or string.find(selfName, "attack") or string.find(selfName, "damage") then
-				if not ShouldHit() then
-					return oldNamecall(self, ...)
-				end
+				if not ShouldHit() then return oldNamecall(self, ...) end
 				
 				local newArgs = {}
 				local modified = false
@@ -653,10 +444,8 @@ local function InstallHooks()
 						newArgs[i] = arg
 					end
 				end
-		
-				if modified then
-					return oldNamecall(self, unpack(newArgs))
-				end
+				
+				if modified then return oldNamecall(self, unpack(newArgs)) end
 			end
 		end
 		
@@ -665,10 +454,7 @@ local function InstallHooks()
 			local direction = args[2]
 			
 			if origin and TargetPart then
-				if not ShouldHit() then
-					return oldNamecall(self, ...)
-				end
-				
+				if not ShouldHit() then return oldNamecall(self, ...) end
 				local newDir = (TargetPart.Position - origin).Unit * direction.Magnitude
 				return oldNamecall(self, origin, newDir, args[3], args[4])
 			end
@@ -676,16 +462,14 @@ local function InstallHooks()
 		
 		return oldNamecall(self, ...)
 	end)
-	
-	if oldIndex then return end
-	
+end
+
+if not oldIndex then
 	oldIndex = hookmetamethod(game, "__index", function(self, key)
 		if self == Mouse and CONFIG.SilentAim and TargetPart then
 			local keyLower = string.lower(key)
 			if keyLower == "hit" then
-				if not ShouldHit() then
-					return oldIndex(self, key)
-				end
+				if not ShouldHit() then return oldIndex(self, key) end
 				return CFrame.new(TargetPart.Position)
 			elseif keyLower == "target" then
 				return TargetPart
@@ -696,29 +480,27 @@ local function InstallHooks()
 end
 
 --=============================================================================
--- RENDER LOOP
+-- BULLET DETECTION
 --=============================================================================
 
-local lastCircleUpdate = 0
-RunService.RenderStepped:Connect(function()
-	local currentTime = tick()
-	if currentTime - lastCircleUpdate < 0.1 then return end
-	lastCircleUpdate = currentTime
-	
-	Circle.Visible = CONFIG.SilentAim
-	
-	if CONFIG.SilentAim then
-		local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-		Circle.Position = screenCenter
-		Circle.Radius = CONFIG.FOV
-		Circle.Color = Color3.fromRGB(255, 255, 255)
-	else
-		Circle.Visible = false
+local BulletFolder = Instance.new("Folder", workspace)
+BulletFolder.Name = "BulletDetection"
+
+local function OnBulletCreated(bullet)
+	if CONFIG.BulletTeleport and TargetPart then
+		TeleportBulletToTarget(bullet)
+	end
+end
+
+workspace.DescendantAdded:Connect(function(descendant)
+	if descendant:IsA("BasePart") and descendant.Name:lower():find("bullet") then
+		task.wait(0.01)
+		OnBulletCreated(descendant)
 	end
 end)
 
 --=============================================================================
--- UPDATE LOOP
+-- RENDER LOOP
 --=============================================================================
 
 task.spawn(function()
@@ -726,6 +508,7 @@ task.spawn(function()
 		task.wait(CONFIG.UpdateRate)
 		if CONFIG.SilentAim then
 			CurrentTarget = GetTarget()
+			TriggerAutoFire()
 		else
 			CurrentTarget = nil
 			TargetInRange = false
@@ -734,13 +517,13 @@ task.spawn(function()
 	end
 end)
 
---=============================================================================
--- CLEANUP
---=============================================================================
-
-Players.PlayerRemoving:Connect(function(player)
-	if player == LocalPlayer then
-		Circle.Visible = false
+RunService.RenderStepped:Connect(function()
+	Circle.Visible = CONFIG.SilentAim
+	if CONFIG.SilentAim then
+		local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+		Circle.Position = screenCenter
+		Circle.Radius = CONFIG.FOV
+		Circle.Color = CONFIG.FOVColor
 	end
 end)
 
@@ -766,31 +549,13 @@ function SilentAimAPI:Toggle(state)
 	CONFIG.SilentAim = state
 	if not state then
 		CurrentTarget = nil
-		TargetPart = nil
 		TargetInRange = false
-		Circle.Visible = false
+		TargetPart = nil
 	end
-end
-
-function SilentAimAPI:GetCurrentTarget()
-	return CurrentTarget, TargetPart, TargetInRange
-end
-
-function SilentAimAPI:SetTargetPart(part)
-	if part then TargetPart = part end
-end
-
-function SilentAimAPI:GetHitChanceDisplay()
-	return CalculateHitChanceDisplay()
-end
-
-function SilentAimAPI:Install()
-	InstallHooks()
 end
 
 function SilentAimAPI:Destroy()
 	Circle:Remove()
-	CONFIG.SilentAim = false
 	CurrentTarget = nil
 	TargetPart = nil
 end
