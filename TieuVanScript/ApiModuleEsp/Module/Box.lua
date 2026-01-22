@@ -26,7 +26,6 @@ local CONFIG = {
 	UseActualTeamColors = true,
 	EnemyBoxColor = Color3.fromRGB(255, 0, 0),
 	AlliedBoxColor = Color3.fromRGB(0, 255, 0),
-	NPCBoxColor = Color3.fromRGB(255, 165, 0),
 	NoTeamColor = Color3.fromRGB(255, 255, 255),
 	
 	ShowGradient = false,
@@ -36,9 +35,6 @@ local CONFIG = {
 	GradientRotation = 90,
 	EnableGradientAnimation = false,
 	GradientAnimationSpeed = 1,
-	
-	TargetMode = "Players",
-	AggressiveNPCDetection = false,
 }
 
 local playerGui = player:WaitForChild("PlayerGui")
@@ -50,82 +46,10 @@ mainScreenGui.Parent = playerGui
 local espBoxes = {}
 local gradientAnimationConnection = nil
 local rotationOffset = 0
-local NPCCache = {}
-local LastCacheUpdate = 0
-local CacheUpdateInterval = 2
-
-local NPCTags = {
-	"NPC", "Npc", "npc", "Enemy", "enemy", "Enemies", "enemies",
-	"Hostile", "hostile", "Bad", "bad", "BadGuy", "badguy",
-	"Foe", "foe", "Opponent", "opponent", "Bot", "bot", "Bots", "bots",
-	"Mob", "mob", "Mobs", "mobs", "Monster", "monster", "Monsters", "monsters",
-	"Zombie", "zombie", "Zombies", "zombies", "Creature", "creature",
-	"Animal", "animal", "Beast", "beast", "Villain", "villain",
-	"Boss", "boss", "MiniBoss", "miniboss", "Guard", "guard",
-	"Guardian", "guardian", "Soldier", "soldier", "Warrior", "warrior",
-	"Fighter", "fighter", "Target", "target", "Dummy", "dummy",
-	"Dummies", "dummies", "Skeleton", "skeleton", "Orc", "orc",
-	"Goblin", "goblin", "Robot", "robot", "Drone", "drone",
-	"Android", "android", "Cyborg", "cyborg", "Automaton", "automaton",
-	"Servant", "servant", "Minion", "minion", "Slave", "slave", "Pawn", "pawn",
-	"AI", "ai", "A.I.", "Char", "char", "Character", "character",
-	"Model", "model", "Event", "event", "Special", "special",
-}
 
 --=============================================================================
 -- UTILITY FUNCTIONS
 --=============================================================================
-
-local function IsPlayer(character)
-	if not character or not character:IsA("Model") then return false end
-	if character == player.Character then return true end
-	local targetPlayer = Players:GetPlayerFromCharacter(character)
-	return targetPlayer ~= nil
-end
-
-local function IsNPC(character)
-	if not character or not character:IsA("Model") then return false end
-	if IsPlayer(character) then return false end
-	
-	local humanoid = character:FindFirstChildOfClass("Humanoid")
-	local head = character:FindFirstChild("Head")
-	local hrp = character:FindFirstChild("HumanoidRootPart")
-	
-	if not humanoid or not head or not hrp or humanoid.Health <= 0 then return false end
-	
-	if CONFIG.AggressiveNPCDetection then return true end
-	
-	local charName = character.Name:lower()
-	for _, tag in pairs(NPCTags) do
-		if charName:find(tag:lower(), 1, true) then return true end
-	end
-	
-	local npcFolders = {"NPCs", "Enemies", "Bots", "Mobs", "Targets", "Enemy", "Hostile",
-		"Monsters", "Zombies", "Creatures", "Characters", "Spawns", "EnemySpawns", "NPCSpawns", "Bosses", "Minions"}
-	
-	for _, folderName in pairs(npcFolders) do
-		local folder = workspace:FindFirstChild(folderName)
-		if folder and character:IsDescendantOf(folder) then return true end
-	end
-	
-	return false
-end
-
-local function FindNPCsInWorkspaceRecursive(parent)
-	local foundNPCs = {}
-	for _, child in pairs(parent:GetChildren()) do
-		if child:IsA("Model") and IsNPC(child) then
-			table.insert(foundNPCs, child)
-		end
-		if not child:IsA("BasePart") and not child:IsA("Decal") and not child:IsA("Texture") then
-			local subNPCs = FindNPCsInWorkspaceRecursive(child)
-			for _, npc in pairs(subNPCs) do
-				table.insert(foundNPCs, npc)
-			end
-		end
-	end
-	return foundNPCs
-end
 
 local function gameHasTeams()
 	local teams = game:GetService("Teams")
@@ -155,6 +79,14 @@ local function isEnemy(targetPlayer)
 	return player.Team ~= targetPlayer.Team
 end
 
+local function shouldShowPlayer(targetPlayer)
+	if not CONFIG.EnableTeamCheck then return true end
+	local isEnemyPlayer = isEnemy(targetPlayer)
+	if CONFIG.ShowEnemyOnly and not isEnemyPlayer then return false end
+	if CONFIG.ShowAlliedOnly and isEnemyPlayer then return false end
+	return true
+end
+
 local function getBoxColor(targetPlayer, isSelf)
 	if isSelf then
 		if CONFIG.UseTeamColors then
@@ -180,52 +112,6 @@ local function getBoxColor(targetPlayer, isSelf)
 			return CONFIG.EnemyBoxColor
 		else
 			return CONFIG.AlliedBoxColor
-		end
-	end
-end
-
-local function getNPCBoxColor()
-	if CONFIG.UseTeamColors then
-		return CONFIG.NPCBoxColor
-	end
-	return CONFIG.BoxColor
-end
-
---=============================================================================
--- CACHE & VALIDATION
---=============================================================================
-
-local function UpdateNPCCache()
-	local currentTime = tick()
-	if currentTime - LastCacheUpdate < CacheUpdateInterval then return end
-	LastCacheUpdate = currentTime
-	
-	NPCCache = {}
-	
-	local allModels = {}
-	for _, model in pairs(workspace:GetChildren()) do
-		if model:IsA("Model") and model ~= player.Character then
-			table.insert(allModels, model)
-		end
-	end
-	
-	local npcFolders = {"NPCs", "Enemies", "Bots", "Mobs", "Targets", "Characters", "Spawns", "Monsters"}
-	for _, folderName in pairs(npcFolders) do
-		local folder = workspace:FindFirstChild(folderName)
-		if folder then
-			local npcsInFolder = FindNPCsInWorkspaceRecursive(folder)
-			for _, npc in pairs(npcsInFolder) do
-				table.insert(allModels, npc)
-			end
-		end
-	end
-	
-	for _, model in pairs(allModels) do
-		local hrp = model:FindFirstChild("HumanoidRootPart")
-		local humanoid = model:FindFirstChildOfClass("Humanoid")
-		
-		if hrp and humanoid and humanoid.Health > 0 and IsNPC(model) then
-			NPCCache[model] = {Model = model, HRP = hrp, Humanoid = humanoid}
 		end
 	end
 end
@@ -348,27 +234,20 @@ local function createEspBox(targetPlayer)
 		UIStroke = UIStroke,
 		InnerUIStroke = InnerUIStroke,
 		BoxGradient = BoxGradient,
-		UIGradient = UIGradient,
-		IsNPC = IsNPC(targetPlayer) or (targetPlayer:IsA("Model") and not IsPlayer(targetPlayer))
+		UIGradient = UIGradient
 	}
 	
 	return espBoxes[targetPlayer]
 end
 
-local function updateEspBox(targetObject, espData)
+local function updateEspBox(targetPlayer, espData)
 	if not espData or not espData.Box then return end
-	
-	local character = targetObject
-	if targetObject:IsA("Player") then
-		character = targetObject.Character
-	end
-	
-	if not character or not character:FindFirstChild("HumanoidRootPart") then
+	if not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
 		espData.Box.Visible = false
 		return
 	end
 	
-	local humanoid = character:FindFirstChild("Humanoid")
+	local humanoid = targetPlayer.Character:FindFirstChild("Humanoid")
 	if not humanoid or humanoid.Health <= 0 then
 		espData.Box.Visible = false
 		return
@@ -386,8 +265,8 @@ local function updateEspBox(targetObject, espData)
 		end
 	end
 	
-	local humanoidRootPart = character.HumanoidRootPart
-	local charSize = character:GetExtentsSize()
+	local humanoidRootPart = targetPlayer.Character.HumanoidRootPart
+	local charSize = targetPlayer.Character:GetExtentsSize()
 	local boxHeight = charSize.Y * 0.8
 	local boxWidth = charSize.X * 0.8
 	
@@ -439,13 +318,7 @@ local function updateEspBox(targetObject, espData)
 		end
 	end
 	
-	local boxColor = CONFIG.BoxColor
-	if espData.IsNPC then
-		boxColor = getNPCBoxColor()
-	elseif targetObject:IsA("Player") then
-		boxColor = getBoxColor(targetObject, false)
-	end
-	
+	local boxColor = getBoxColor(targetPlayer, false)
 	if espData.UIStroke then
 		espData.UIStroke.Color = boxColor
 	end
@@ -521,8 +394,7 @@ local function createSelfBox()
 		UIStroke = UIStroke,
 		InnerUIStroke = InnerUIStroke,
 		BoxGradient = BoxGradient,
-		UIGradient = UIGradient,
-		IsNPC = false
+		UIGradient = UIGradient
 	}
 end
 
@@ -618,19 +490,19 @@ local function updateSelfBox()
 end
 
 local function updateAllEsp()
-	for targetObject, espData in pairs(espBoxes) do
-		if targetObject and targetObject.Parent and espData then
-			if targetObject == player then
+	for targetPlayer, espData in pairs(espBoxes) do
+		if targetPlayer and targetPlayer.Parent and espData then
+			if targetPlayer == player then
 				continue
 			end
 			
-			if CONFIG.Enabled then
-				updateEspBox(targetObject, espData)
+			if CONFIG.Enabled and shouldShowPlayer(targetPlayer) then
+				updateEspBox(targetPlayer, espData)
 			else
 				espData.Box.Visible = false
 			end
 		else
-			removeEspBox(targetObject)
+			removeEspBox(targetPlayer)
 		end
 	end
 end
@@ -641,9 +513,9 @@ end
 
 local function onPlayerAdded(newPlayer)
 	if newPlayer ~= player then
-		if CONFIG.TargetMode == "Players" or CONFIG.TargetMode == "Both" then
+		if shouldShowPlayer(newPlayer) then
 			wait(0.5)
-			createEspBox(newPlayer.Character or newPlayer.CharacterAdded:Wait())
+			createEspBox(newPlayer)
 		end
 	end
 end
@@ -676,22 +548,6 @@ for _, otherPlayer in pairs(Players:GetPlayers()) do
 end
 
 RunService.RenderStepped:Connect(function()
-	if CONFIG.Enabled then
-		UpdateNPCCache()
-		
-		if CONFIG.TargetMode == "NPCs" or CONFIG.TargetMode == "Both" then
-			for npcModel, npcData in pairs(NPCCache) do
-				if npcModel and npcModel.Parent then
-					if not espBoxes[npcModel] then
-						createEspBox(npcModel)
-					end
-				else
-					removeEspBox(npcModel)
-				end
-			end
-		end
-	end
-	
 	updateAllEsp()
 	updateSelfBox()
 end)
@@ -709,6 +565,7 @@ function BoxESPAPI:UpdateConfig(newConfig)
 		end
 	end
 	
+	-- Restart animation nếu cấu hình gradient thay đổi
 	if newConfig.EnableGradientAnimation ~= nil then
 		if newConfig.EnableGradientAnimation then
 			startGradientAnimation()
