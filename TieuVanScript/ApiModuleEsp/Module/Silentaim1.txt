@@ -277,6 +277,28 @@ local function ShouldHit()
 	return math.random(1, 100) <= CONFIG.HitChance
 end
 
+local function IsTargetVisible(targetPos, localChar)
+	if not CONFIG.VisibleCheck then return true end
+	
+	local rayParams = RaycastParams.new()
+	rayParams.FilterType = Enum.RaycastFilterType.Blacklist
+	rayParams.FilterDescendantsInstances = {localChar, Camera}
+	rayParams.IgnoreWater = true
+	
+	local origin = Camera.CFrame.Position
+	local direction = (targetPos - origin)
+	local distance = direction.Magnitude
+	
+	if distance < 1 then return true end
+	
+	local ray = Workspace:Raycast(origin, direction.Unit * (distance - 0.1), rayParams)
+	
+	if ray then
+		return false
+	end
+	return true
+end
+
 local function GetTarget()
 	if not LocalPlayer.Character then 
 		TargetInRange = false
@@ -333,23 +355,27 @@ local function GetTarget()
 				local distFromCenter = (screenPoint - screenCenter).Magnitude
 				
 				if distFromCenter <= CONFIG.FOV then
-					TargetInRange = true
+					local isVisible = IsTargetVisible(targetPos, localChar)
 					
-					local currentScore = 0
-					if CONFIG.TargetPriority == "Crosshair" then
-						currentScore = distFromCenter
-					elseif CONFIG.TargetPriority == "Distance" then
-						currentScore = (targetPos - localRoot.Position).Magnitude
-					elseif CONFIG.TargetPriority == "LowestHP" then
-						currentScore = humanoid.Health
-					else
-						currentScore = distFromCenter
-					end
-					
-					if currentScore < bestScore then
-						bestScore = currentScore
-						closestPart = targetPart
-						closestTarget = data.Model
+					if isVisible or not CONFIG.VisibleCheck then
+						TargetInRange = true
+						
+						local currentScore = 0
+						if CONFIG.TargetPriority == "Crosshair" then
+							currentScore = distFromCenter
+						elseif CONFIG.TargetPriority == "Distance" then
+							currentScore = (targetPos - localRoot.Position).Magnitude
+						elseif CONFIG.TargetPriority == "LowestHP" then
+							currentScore = humanoid.Health
+						else
+							currentScore = distFromCenter
+						end
+						
+						if currentScore < bestScore then
+							bestScore = currentScore
+							closestPart = targetPart
+							closestTarget = data.Model
+						end
 					end
 				end
 			end
