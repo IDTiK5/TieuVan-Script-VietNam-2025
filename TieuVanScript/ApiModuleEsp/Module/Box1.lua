@@ -355,14 +355,20 @@ local function createEspBox(targetPlayer)
 	return espBoxes[targetPlayer]
 end
 
-local function updateEspBox(targetPlayer, espData)
+local function updateEspBox(targetObject, espData)
 	if not espData or not espData.Box then return end
-	if not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+	
+	local character = targetObject
+	if targetObject:IsA("Player") then
+		character = targetObject.Character
+	end
+	
+	if not character or not character:FindFirstChild("HumanoidRootPart") then
 		espData.Box.Visible = false
 		return
 	end
 	
-	local humanoid = targetPlayer.Character:FindFirstChild("Humanoid")
+	local humanoid = character:FindFirstChild("Humanoid")
 	if not humanoid or humanoid.Health <= 0 then
 		espData.Box.Visible = false
 		return
@@ -380,8 +386,8 @@ local function updateEspBox(targetPlayer, espData)
 		end
 	end
 	
-	local humanoidRootPart = targetPlayer.Character.HumanoidRootPart
-	local charSize = targetPlayer.Character:GetExtentsSize()
+	local humanoidRootPart = character.HumanoidRootPart
+	local charSize = character:GetExtentsSize()
 	local boxHeight = charSize.Y * 0.8
 	local boxWidth = charSize.X * 0.8
 	
@@ -436,8 +442,8 @@ local function updateEspBox(targetPlayer, espData)
 	local boxColor = CONFIG.BoxColor
 	if espData.IsNPC then
 		boxColor = getNPCBoxColor()
-	elseif IsPlayer(targetPlayer) then
-		boxColor = getBoxColor(Players:GetPlayerFromCharacter(targetPlayer), false)
+	elseif targetObject:IsA("Player") then
+		boxColor = getBoxColor(targetObject, false)
 	end
 	
 	if espData.UIStroke then
@@ -612,19 +618,19 @@ local function updateSelfBox()
 end
 
 local function updateAllEsp()
-	for targetPlayer, espData in pairs(espBoxes) do
-		if targetPlayer and targetPlayer.Parent and espData then
-			if targetPlayer == player then
+	for targetObject, espData in pairs(espBoxes) do
+		if targetObject and targetObject.Parent and espData then
+			if targetObject == player then
 				continue
 			end
 			
 			if CONFIG.Enabled then
-				updateEspBox(targetPlayer, espData)
+				updateEspBox(targetObject, espData)
 			else
 				espData.Box.Visible = false
 			end
 		else
-			removeEspBox(targetPlayer)
+			removeEspBox(targetObject)
 		end
 	end
 end
