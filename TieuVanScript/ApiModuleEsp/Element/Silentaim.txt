@@ -183,7 +183,7 @@ return function(AimPage, SilentAimAPI)
 	SASection:Toggle({
 		Name = "Aggressive NPC Detection",
 		Flag = "SilentAimAggressiveNPC",
-		Default = false,
+		Default = true,
 		Callback = function(Value)
 			SilentAimAPI:UpdateConfig({AggressiveNPCDetection = Value})
 		end
