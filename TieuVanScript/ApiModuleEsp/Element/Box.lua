@@ -16,6 +16,17 @@ return function(EspPage, BoxESPAPI)
 		end
 	})
 
+	-- ⭐ THÊM DROPDOWN MODE
+	Section:Dropdown({
+		Name = "Target Mode",
+		Flag = "NPCModeDropdown",
+		Options = {"Players", "NPCs", "Both"},
+		Default = "Both",
+		Callback = function(Value)
+			BoxESPAPI:UpdateConfig({NPCMode = Value})
+		end
+	})
+
 	Section:Toggle({
 		Name = "Show Self Box",
 		Flag = "ShowSelfBox",
@@ -111,6 +122,16 @@ return function(EspPage, BoxESPAPI)
 		Default = Color3.fromRGB(255, 255, 255),
 		Callback = function(Value)
 			BoxESPAPI:UpdateConfig({SelfBoxColor = Value})
+		end
+	})
+
+	-- ⭐ THÊM MÀU NPC BOX
+	Section:Label("NPC Box Color"):Colorpicker({
+		Name = "NPC Box Color",
+		Flag = "NPCBoxColor",
+		Default = Color3.fromRGB(255, 100, 0),
+		Callback = function(Value)
+			BoxESPAPI:UpdateConfig({NPCBoxColor = Value})
 		end
 	})
 
@@ -215,4 +236,23 @@ return function(EspPage, BoxESPAPI)
 			BoxESPAPI:UpdateConfig({GradientColor2 = Value})
 		end
 	})
+
+	-- ⭐ THÊM SECTION NPC
+	local NPCSection = EspPage:Section({
+		Name = "NPC Settings",
+		Description = "Configure NPC detection",
+		Icon = "12053927543",
+		Side = 1
+	})
+
+	NPCSection:Toggle({
+		Name = "Aggressive NPC Detection",
+		Flag = "AggressiveNPCDetection",
+		Default = true,
+		Callback = function(Value)
+			BoxESPAPI:UpdateConfig({AggressiveNPCDetection = Value})
+		end
+	})
+
+	NPCSection:Label("Aggressive mode sẽ detect tất cả model có humanoid làm NPC")
 end
