@@ -3,7 +3,7 @@ return function(AimPage, SilentAimAdvancedAPI)
 		Name = "Silent Aim Advanced",
 		Description = "advanced silent aim with fov options",
 		Icon = "10709818534",
-		Side = 2
+		Side = 1
 	})
 
 	SASection:Toggle({
