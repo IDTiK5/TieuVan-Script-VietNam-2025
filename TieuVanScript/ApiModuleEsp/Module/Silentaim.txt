@@ -26,7 +26,6 @@ local CONFIG = {
 	AggressiveNPCDetection = false,
 	TargetPriority = "Crosshair",
 	StickyAim = true,
-	AutoFire = false,
 }
 
 local CurrentTarget = nil
@@ -140,46 +139,6 @@ local function GetTargetPart(character)
 		return character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso") or character:FindFirstChild("HumanoidRootPart")
 	end
 	return character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Head")
-end
-
---=============================================================================
--- AUTO FIRE FUNCTION
---=============================================================================
-
-local function TriggerAutoFire()
-	if not CONFIG.AutoFire or not TargetPart or not CurrentTarget then return end
-	
-	-- Tìm weapon hoặc fire remote
-	local backpack = LocalPlayer:FindFirstChild("Backpack")
-	if backpack then
-		for _, tool in pairs(backpack:GetChildren()) do
-			if tool:IsA("Tool") then
-				local fireFunc = tool:FindFirstChild("Fire") or tool:FindFirstChild("Shoot") or tool:FindFirstChild("Attack")
-				if fireFunc and fireFunc:IsA("RemoteEvent") then
-					fireFunc:FireServer(TargetPart)
-				elseif fireFunc and fireFunc:IsA("RemoteFunction") then
-					fireFunc:InvokeServer(TargetPart)
-				end
-				break
-			end
-		end
-	end
-	
-	-- Hoặc tìm trong character
-	local character = LocalPlayer.Character
-	if character then
-		for _, tool in pairs(character:GetChildren()) do
-			if tool:IsA("Tool") then
-				local fireFunc = tool:FindFirstChild("Fire") or tool:FindFirstChild("Shoot") or tool:FindFirstChild("Attack")
-				if fireFunc and fireFunc:IsA("RemoteEvent") then
-					fireFunc:FireServer(TargetPart)
-				elseif fireFunc and fireFunc:IsA("RemoteFunction") then
-					fireFunc:InvokeServer(TargetPart)
-				end
-				break
-			end
-		end
-	end
 end
 
 --=============================================================================
@@ -508,7 +467,6 @@ task.spawn(function()
 		task.wait(CONFIG.UpdateRate)
 		if CONFIG.SilentAim then
 			CurrentTarget = GetTarget()
-			TriggerAutoFire()
 		else
 			CurrentTarget = nil
 			TargetInRange = false
