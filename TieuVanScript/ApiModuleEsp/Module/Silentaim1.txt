@@ -56,7 +56,7 @@ local NPCTags = {
 	"Android", "android", "Cyborg", "cyborg", "Automaton", "automaton",
 	"Servant", "servant", "Minion", "minion", "Slave", "slave", "Pawn", "pawn",
 	"AI", "ai", "A.I.", "Char", "char", "Character", "character",
-	"Model", "model", "Event", "event", "Special", "special",
+	"Model", "model", "Event", "event", "Special", "special", "Monkey",
 }
 
 --=============================================================================
