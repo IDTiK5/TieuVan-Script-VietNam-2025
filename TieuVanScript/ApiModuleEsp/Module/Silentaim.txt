@@ -12,8 +12,6 @@ local Mouse = LocalPlayer:GetMouse()
 local CONFIG = {
 	SilentAim = false,
 	FOV = 150,
-	FOVScale = 1,
-	UseScreenPercentage = true,
 	FOVColor = Color3.fromRGB(255, 255, 255),
 	VisibleCheck = true,
 	TeamCheck = false,
@@ -28,6 +26,7 @@ local CONFIG = {
 	AggressiveNPCDetection = false,
 	TargetPriority = "Crosshair",
 	StickyAim = true,
+	AutoFire = false,
 }
 
 local CurrentTarget = nil
@@ -56,27 +55,8 @@ local NPCTags = {
 	"Android", "android", "Cyborg", "cyborg", "Automaton", "automaton",
 	"Servant", "servant", "Minion", "minion", "Slave", "slave", "Pawn", "pawn",
 	"AI", "ai", "A.I.", "Char", "char", "Character", "character",
-	"Model", "model", "Event", "event", "Special", "special", "Monkey",
+	"Model", "model", "Event", "event", "Special", "special",
 }
-
---=============================================================================
--- FOV CALCULATION FUNCTIONS
---=============================================================================
-
-local function GetActualFOV()
-	if CONFIG.UseScreenPercentage then
-		local viewportSize = Camera.ViewportSize
-		local baseRadius = math.min(viewportSize.X, viewportSize.Y) / 2
-		return (CONFIG.FOV / 100) * baseRadius * CONFIG.FOVScale
-	else
-		return CONFIG.FOV * CONFIG.FOVScale
-	end
-end
-
-local function GetMaxFOV()
-	local viewportSize = Camera.ViewportSize
-	return math.sqrt((viewportSize.X/2)^2 + (viewportSize.Y/2)^2)
-end
 
 --=============================================================================
 -- UTILITY FUNCTIONS
@@ -98,6 +78,7 @@ local function IsNPC(character)
 	local hrp = character:FindFirstChild("HumanoidRootPart")
 	
 	if not humanoid or not head or not hrp or humanoid.Health <= 0 then return false end
+	
 	if CONFIG.AggressiveNPCDetection then return true end
 	
 	local charName = character.Name:lower()
@@ -112,6 +93,7 @@ local function IsNPC(character)
 		local folder = workspace:FindFirstChild(folderName)
 		if folder and character:IsDescendantOf(folder) then return true end
 	end
+	
 	return true
 end
 
@@ -158,6 +140,59 @@ local function GetTargetPart(character)
 		return character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso") or character:FindFirstChild("HumanoidRootPart")
 	end
 	return character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Head")
+end
+
+--=============================================================================
+-- AUTO FIRE FUNCTION
+--=============================================================================
+
+local function TriggerAutoFire()
+	if not CONFIG.AutoFire or not TargetPart or not CurrentTarget then return end
+	
+	-- Tìm weapon hoặc fire remote
+	local backpack = LocalPlayer:FindFirstChild("Backpack")
+	if backpack then
+		for _, tool in pairs(backpack:GetChildren()) do
+			if tool:IsA("Tool") then
+				local fireFunc = tool:FindFirstChild("Fire") or tool:FindFirstChild("Shoot") or tool:FindFirstChild("Attack")
+				if fireFunc and fireFunc:IsA("RemoteEvent") then
+					fireFunc:FireServer(TargetPart)
+				elseif fireFunc and fireFunc:IsA("RemoteFunction") then
+					fireFunc:InvokeServer(TargetPart)
+				end
+				break
+			end
+		end
+	end
+	
+	-- Hoặc tìm trong character
+	local character = LocalPlayer.Character
+	if character then
+		for _, tool in pairs(character:GetChildren()) do
+			if tool:IsA("Tool") then
+				local fireFunc = tool:FindFirstChild("Fire") or tool:FindFirstChild("Shoot") or tool:FindFirstChild("Attack")
+				if fireFunc and fireFunc:IsA("RemoteEvent") then
+					fireFunc:FireServer(TargetPart)
+				elseif fireFunc and fireFunc:IsA("RemoteFunction") then
+					fireFunc:InvokeServer(TargetPart)
+				end
+				break
+			end
+		end
+	end
+end
+
+--=============================================================================
+-- BULLET TELEPORT FUNCTION
+--=============================================================================
+
+local function TeleportBulletToTarget(bullet)
+	if not CONFIG.BulletTeleport or not TargetPart then return end
+	if not bullet or not bullet:IsA("BasePart") then return end
+	
+	-- Teleport viên đạn trực tiếp tới target
+	bullet.CFrame = CFrame.new(TargetPart.Position)
+	bullet.Velocity = Vector3.new(0, 0, 0)
 end
 
 --=============================================================================
@@ -228,8 +263,7 @@ local function ValidateCurrentTarget()
 	
 	local screenPoint = Vector2.new(screenPos.X, screenPos.Y)
 	local dist = (screenPoint - screenCenter).Magnitude
-	local actualFOV = GetActualFOV()
-	if dist > actualFOV then return false end
+	if dist > CONFIG.FOV then return false end
 	
 	if CONFIG.VisibleCheck then
 		local raycastParams = RaycastParams.new()
@@ -274,7 +308,6 @@ local function GetTarget()
 	local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 	local localChar = LocalPlayer.Character
 	local localRoot = localChar:FindFirstChild("HumanoidRootPart")
-	local actualFOV = GetActualFOV()
 	
 	TargetInRange = false
 	TargetPart = nil
@@ -304,7 +337,7 @@ local function GetTarget()
 				local screenPoint = Vector2.new(screenPos.X, screenPos.Y)
 				local distFromCenter = (screenPoint - screenCenter).Magnitude
 				
-				if distFromCenter <= actualFOV then
+				if distFromCenter <= CONFIG.FOV then
 					local isVisible = true
 					
 					if CONFIG.VisibleCheck then
@@ -390,7 +423,7 @@ if not oldNamecall then
 		
 		if (method == "FireServer" or method == "InvokeServer") and typeof(self) == "Instance" then
 			local selfName = self.Name:lower()
-			if string.find(selfName, "fire") or string.find(selfName, "hit") or string.find(selfName, "attack") or string.find(selfName, "damage") or string.find(selfName, "shoot") or string.find(selfName, "bullet") or string.find(selfName, "weapon") or string.find(selfName, "gun") then
+			if string.find(selfName, "fire") or string.find(selfName, "hit") or string.find(selfName, "attack") or string.find(selfName, "damage") then
 				if not ShouldHit() then return oldNamecall(self, ...) end
 				
 				local newArgs = {}
@@ -405,31 +438,8 @@ if not oldNamecall then
 						modified = true
 					elseif typeof(arg) == "Ray" then
 						local origin = arg.Origin
-						newArgs[i] = Ray.new(origin, (TargetPart.Position - origin).Unit * 1000)
+						newArgs[i] = Ray.new(origin, (TargetPart.Position - origin).Unit * 100)
 						modified = true
-					elseif typeof(arg) == "Instance" and arg:IsA("BasePart") then
-						newArgs[i] = TargetPart
-						modified = true
-					elseif typeof(arg) == "table" then
-						local newTable = {}
-						local tableModified = false
-						for k, v in pairs(arg) do
-							if typeof(v) == "Vector3" then
-								newTable[k] = TargetPart.Position
-								tableModified = true
-							elseif typeof(v) == "CFrame" then
-								newTable[k] = CFrame.new(TargetPart.Position)
-								tableModified = true
-							else
-								newTable[k] = v
-							end
-						end
-						if tableModified then
-							newArgs[i] = newTable
-							modified = true
-						else
-							newArgs[i] = arg
-						end
 					else
 						newArgs[i] = arg
 					end
@@ -463,16 +473,6 @@ if not oldIndex then
 				return CFrame.new(TargetPart.Position)
 			elseif keyLower == "target" then
 				return TargetPart
-			elseif keyLower == "x" then
-				local screenPos = Camera:WorldToViewportPoint(TargetPart.Position)
-				return screenPos.X
-			elseif keyLower == "y" then
-				local screenPos = Camera:WorldToViewportPoint(TargetPart.Position)
-				return screenPos.Y
-			elseif keyLower == "unitray" then
-				local origin = Camera.CFrame.Position
-				local direction = (TargetPart.Position - origin).Unit
-				return Ray.new(origin, direction)
 			end
 		end
 		return oldIndex(self, key)
@@ -483,16 +483,19 @@ end
 -- BULLET DETECTION
 --=============================================================================
 
+local BulletFolder = Instance.new("Folder", workspace)
+BulletFolder.Name = "BulletDetection"
+
+local function OnBulletCreated(bullet)
+	if CONFIG.BulletTeleport and TargetPart then
+		TeleportBulletToTarget(bullet)
+	end
+end
+
 workspace.DescendantAdded:Connect(function(descendant)
-	if descendant:IsA("BasePart") then
-		local name = descendant.Name:lower()
-		if name:find("bullet") or name:find("projectile") or name:find("shot") then
-			task.wait(0.01)
-			if CONFIG.BulletTeleport and TargetPart then
-				descendant.CFrame = CFrame.new(TargetPart.Position)
-				descendant.Velocity = Vector3.new(0, 0, 0)
-			end
-		end
+	if descendant:IsA("BasePart") and descendant.Name:lower():find("bullet") then
+		task.wait(0.01)
+		OnBulletCreated(descendant)
 	end
 end)
 
@@ -505,6 +508,7 @@ task.spawn(function()
 		task.wait(CONFIG.UpdateRate)
 		if CONFIG.SilentAim then
 			CurrentTarget = GetTarget()
+			TriggerAutoFire()
 		else
 			CurrentTarget = nil
 			TargetInRange = false
@@ -518,7 +522,7 @@ RunService.RenderStepped:Connect(function()
 	if CONFIG.SilentAim then
 		local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 		Circle.Position = screenCenter
-		Circle.Radius = GetActualFOV()
+		Circle.Radius = CONFIG.FOV
 		Circle.Color = CONFIG.FOVColor
 	end
 end)
@@ -527,9 +531,9 @@ end)
 -- PUBLIC API
 --=============================================================================
 
-local SilentAimAdvancedAPI = {}
+local SilentAimAPI = {}
 
-function SilentAimAdvancedAPI:UpdateConfig(newConfig)
+function SilentAimAPI:UpdateConfig(newConfig)
 	for key, value in pairs(newConfig) do
 		if CONFIG[key] ~= nil then
 			CONFIG[key] = value
@@ -537,11 +541,11 @@ function SilentAimAdvancedAPI:UpdateConfig(newConfig)
 	end
 end
 
-function SilentAimAdvancedAPI:GetConfig()
+function SilentAimAPI:GetConfig()
 	return CONFIG
 end
 
-function SilentAimAdvancedAPI:Toggle(state)
+function SilentAimAPI:Toggle(state)
 	CONFIG.SilentAim = state
 	if not state then
 		CurrentTarget = nil
@@ -550,16 +554,10 @@ function SilentAimAdvancedAPI:Toggle(state)
 	end
 end
 
-function SilentAimAdvancedAPI:SetFullScreen()
-	CONFIG.UseScreenPercentage = true
-	CONFIG.FOV = 200
-	CONFIG.FOVScale = 1
-end
-
-function SilentAimAdvancedAPI:Destroy()
+function SilentAimAPI:Destroy()
 	Circle:Remove()
 	CurrentTarget = nil
 	TargetPart = nil
 end
 
-return SilentAimAdvancedAPI
+return SilentAimAPI
