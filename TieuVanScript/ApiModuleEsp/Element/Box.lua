@@ -20,10 +20,15 @@ return function(EspPage, BoxESPAPI)
 	Section:Dropdown({
 		Name = "Target Mode",
 		Flag = "NPCModeDropdown",
-		Options = {"Players", "NPCs", "Both"},
 		Default = "Both",
+		Items = {"Players", "NPCs", "Both"},
+		Multi = false,
 		Callback = function(Value)
-			BoxESPAPI:UpdateConfig({NPCMode = Value})
+			if type(Value) == "table" then
+				BoxESPAPI:UpdateConfig({NPCMode = Value[1]})
+			else
+				BoxESPAPI:UpdateConfig({NPCMode = Value})
+			end
 		end
 	})
 
@@ -253,6 +258,4 @@ return function(EspPage, BoxESPAPI)
 			BoxESPAPI:UpdateConfig({AggressiveNPCDetection = Value})
 		end
 	})
-
-	NPCSection:Label("Aggressive mode sẽ detect tất cả model có humanoid làm NPC")
 end
