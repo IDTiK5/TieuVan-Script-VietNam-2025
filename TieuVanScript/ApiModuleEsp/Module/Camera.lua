@@ -2,6 +2,7 @@ local LocalPlayer = game.Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 local ContextActionService = game:GetService("ContextActionService")
 
 --=============================================================================
@@ -34,34 +35,46 @@ local DefaultMinZoom = LocalPlayer.CameraMinZoomDistance
 local DefaultCameraMode = LocalPlayer.CameraMode
 local DefaultDevCameraMode = LocalPlayer.DevComputerCameraMode
 
+local UnlockCameraEnabled = false
+local UnlockCameraConnection = nil
+local ShiftLockEnabled = false
+local ShiftLockConnection = nil
+local SmoothCameraEnabled = false
+local CurrentMaxZoom = DefaultMaxZoom
+
+local CameraOffsetX = 0
+local CameraOffsetY = 0
+local CameraOffsetZ = 0
+local CameraSensitivity = 1
+
+local SpectateEnabled = false
+local SpectateConnection = nil
 local SpectateCameraPosition = nil
 local SpectateCameraRotation = nil
-local SpectateConnection = nil
-local UnlockCameraConnection = nil
-local ShiftLockConnection = nil
+local SpectateSpeed = 50
+local FrozenCharacterParts = {}
+local OriginalAnchored = {}
 
-local SpectatePitch = 0
-local SpectateYaw = 0
 local MobileJumpHeld = false
+local MobileJumpTapTime = 0
+local MobileJumpTapThreshold = 0.2
 local MobileVerticalDirection = 0
 local LastJumpInputTime = 0
 local JumpTapCooldown = false
-local MobileJumpTapThreshold = 0.2
 
-local OriginalAnchored = {}
-local FrozenCharacterParts = {}
-local TouchConnections = {}
-
-local SmoothCameraEnabled = false
-local lastCFrame = Camera.CFrame
-local smoothSpeed = 0.15
+local SpectatePitch = 0
+local SpectateYaw = 0
 
 local TouchStartPos = nil
 local TouchCameraYaw = 0
 local TouchCameraPitch = 0
+local TouchConnections = {}
+
+local lastCFrame = Camera.CFrame
+local smoothSpeed = 0.15
 
 --=============================================================================
--- UTILITY FUNCTIONS
+-- FREEZE CHARACTER
 --=============================================================================
 
 local function FreezeCharacter(freeze)
@@ -95,13 +108,14 @@ local function FreezeCharacter(freeze)
 	end
 end
 
-local MobileThumbstickLeft = Vector2.new(0, 0)
-local MobileThumbstickRight = Vector2.new(0, 0)
+--=============================================================================
+-- GET SPECTATE INPUT
+--=============================================================================
 
 local function GetSpectateInput()
 	local moveDirection = Vector3.new(0, 0, 0)
 	
-	-- PC Keyboard Input
+	-- Keyboard input (PC)
 	if UserInputService:IsKeyDown(Enum.KeyCode.W) then
 		moveDirection = moveDirection + Vector3.new(0, 0, -1)
 	end
@@ -121,26 +135,44 @@ local function GetSpectateInput()
 		moveDirection = moveDirection + Vector3.new(0, -1, 0)
 	end
 	
-	-- Mobile Thumbstick Input (Left thumbstick for movement)
-	if MobileThumbstickLeft.Magnitude > 0.1 then
-		moveDirection = moveDirection + Vector3.new(MobileThumbstickLeft.X, 0, -MobileThumbstickLeft.Y)
+	-- Mobile thumbstick input
+	local PlayerModule = LocalPlayer:FindFirstChild("PlayerScripts")
+	if PlayerModule then
+		local ControlModule = PlayerModule:FindFirstChild("PlayerModule")
+		if ControlModule then
+			local success, controls = pcall(function()
+				return require(ControlModule):GetControls()
+			end)
+			if success and controls then
+				local moveVector = controls:GetMoveVector()
+				if moveVector and moveVector.Magnitude > 0 then
+					moveDirection = moveDirection + Vector3.new(moveVector.X, 0, moveVector.Z)
+				end
+			end
+		end
 	end
 	
-	if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-		moveDirection = moveDirection * 2
-	end
-	
+	-- Mobile vertical movement
 	if MobileJumpHeld then
 		moveDirection = moveDirection + Vector3.new(0, 1, 0)
 	elseif MobileVerticalDirection ~= 0 then
 		moveDirection = moveDirection + Vector3.new(0, MobileVerticalDirection, 0)
 	end
 	
+	-- Shift để tăng tốc (PC)
+	if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+		moveDirection = moveDirection * 2
+	end
+	
 	return moveDirection
 end
 
+--=============================================================================
+-- HANDLE JUMP ACTION
+--=============================================================================
+
 local function HandleJumpAction(actionName, inputState, inputObject)
-	if not CONFIG.SpectateEnabled then return Enum.ContextActionResult.Pass end
+	if not SpectateEnabled then return Enum.ContextActionResult.Pass end
 	
 	local currentTime = tick()
 	
@@ -151,7 +183,7 @@ local function HandleJumpAction(actionName, inputState, inputObject)
 		
 		task.spawn(function()
 			task.wait(MobileJumpTapThreshold)
-			if CONFIG.SpectateEnabled and (tick() - LastJumpInputTime) >= MobileJumpTapThreshold then
+			if SpectateEnabled and (tick() - LastJumpInputTime) >= MobileJumpTapThreshold then
 				MobileJumpHeld = true
 				MobileVerticalDirection = 0
 			end
@@ -167,7 +199,7 @@ local function HandleJumpAction(actionName, inputState, inputObject)
 			
 			task.spawn(function()
 				task.wait(0.15)
-				if CONFIG.SpectateEnabled then
+				if SpectateEnabled then
 					MobileVerticalDirection = 0
 				end
 				task.wait(0.1)
@@ -182,74 +214,48 @@ local function HandleJumpAction(actionName, inputState, inputObject)
 	return Enum.ContextActionResult.Sink
 end
 
-local function HandleMobileThumbstickInput()
-	local guiConnection
+--=============================================================================
+-- HANDLE TOUCH INPUT
+--=============================================================================
+
+local function HandleTouchInput()
+	local touchConnection
+	local touchEndConnection
+	local touchBeginConnection
 	
-	-- Detect GuiInset để tính toán vị trí thumbstick
-	local GuiInset = game:GetService("GuiService"):GetGuiInset()
-	
-	guiConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-		if not CONFIG.SpectateEnabled then return end
-		if input.UserInputType ~= Enum.UserInputType.Touch then return end
-	end)
-	
-	-- Touch input cho camera rotation (Right side)
-	local touchRotateConnection = UserInputService.TouchMoved:Connect(function(touch, gameProcessed)
-		if not CONFIG.SpectateEnabled then return end
+	touchConnection = UserInputService.TouchMoved:Connect(function(touch, gameProcessed)
+		if not SpectateEnabled then return end
 		if gameProcessed then return end
 		
 		local screenSize = Camera.ViewportSize
-		-- Nếu touch trên phần phải (40% bên phải) = camera rotation
-		if touch.Position.X > screenSize.X * 0.6 then
-			if TouchStartPos then
-				local delta = touch.Position - TouchStartPos
-				TouchStartPos = touch.Position
-				
-				local sensitivity = 0.005 * CONFIG.CameraSensitivity
-				TouchCameraYaw = TouchCameraYaw - delta.X * sensitivity
-				TouchCameraPitch = math.clamp(TouchCameraPitch - delta.Y * sensitivity, -math.rad(89), math.rad(89))
-			end
-		else
-			-- Nếu touch trên phần trái (40% bên trái) = thumbstick movement
-			local centerX = screenSize.X * 0.15
-			local centerY = screenSize.Y * 0.85
-			local deadzone = 30
+		if touch.Position.X < screenSize.X * 0.4 then return end
+		
+		if TouchStartPos then
+			local delta = touch.Position - TouchStartPos
+			TouchStartPos = touch.Position
 			
-			local deltaX = touch.Position.X - centerX
-			local deltaY = touch.Position.Y - centerY
-			local distance = math.sqrt(deltaX * deltaX + deltaY * deltaY)
-			
-			if distance > deadzone then
-				local magnitude = math.min(distance / 100, 1)
-				local angle = math.atan2(deltaY, deltaX)
-				
-				MobileThumbstickLeft = Vector2.new(
-					math.cos(angle) * magnitude,
-					math.sin(angle) * magnitude
-				)
-			else
-				MobileThumbstickLeft = Vector2.new(0, 0)
-			end
+			local sensitivity = 0.005 * CameraSensitivity
+			TouchCameraYaw = TouchCameraYaw - delta.X * sensitivity
+			TouchCameraPitch = math.clamp(TouchCameraPitch - delta.Y * sensitivity, -math.rad(89), math.rad(89))
 		end
 	end)
 	
-	local touchBeginConnection = UserInputService.TouchStarted:Connect(function(touch, gameProcessed)
-		if not CONFIG.SpectateEnabled then return end
+	touchBeginConnection = UserInputService.TouchStarted:Connect(function(touch, gameProcessed)
+		if not SpectateEnabled then return end
 		if gameProcessed then return end
 		
 		local screenSize = Camera.ViewportSize
-		if touch.Position.X > screenSize.X * 0.6 then
+		if touch.Position.X >= screenSize.X * 0.4 then
 			TouchStartPos = touch.Position
 		end
 	end)
 	
-	local touchEndConnection = UserInputService.TouchEnded:Connect(function(touch, gameProcessed)
-		if not CONFIG.SpectateEnabled then return end
+	touchEndConnection = UserInputService.TouchEnded:Connect(function(touch, gameProcessed)
+		if not SpectateEnabled then return end
 		TouchStartPos = nil
-		MobileThumbstickLeft = Vector2.new(0, 0)
 	end)
 	
-	return {guiConnection, touchRotateConnection, touchBeginConnection, touchEndConnection}
+	return {touchConnection, touchEndConnection, touchBeginConnection}
 end
 
 --=============================================================================
@@ -257,7 +263,7 @@ end
 --=============================================================================
 
 local function StartSpectate()
-	CONFIG.SpectateEnabled = true
+	SpectateEnabled = true
 	SpectateCameraPosition = Camera.CFrame.Position
 	SpectateCameraRotation = Camera.CFrame - Camera.CFrame.Position
 	
@@ -275,13 +281,14 @@ local function StartSpectate()
 	)
 	
 	if UserInputService.TouchEnabled then
-		TouchConnections = HandleMobileThumbstickInput()
+		TouchConnections = HandleTouchInput()
 	end
 	
 	if SpectateConnection then
 		SpectateConnection:Disconnect()
 	end
 	
+	-- Khởi tạo rotation từ camera hiện tại
 	local lookVector = Camera.CFrame.LookVector
 	SpectateYaw = math.atan2(-lookVector.X, -lookVector.Z)
 	SpectatePitch = math.asin(lookVector.Y)
@@ -290,33 +297,41 @@ local function StartSpectate()
 	TouchCameraPitch = SpectatePitch
 	
 	SpectateConnection = RunService.RenderStepped:Connect(function(deltaTime)
-		if not CONFIG.SpectateEnabled then return end
+		if not SpectateEnabled then return end
 		
+		-- Xử lý xoay camera
 		if UserInputService.TouchEnabled then
+			-- Mobile: sử dụng touch input
 			SpectatePitch = TouchCameraPitch
 			SpectateYaw = TouchCameraYaw
 		else
+			-- PC: sử dụng mouse delta
 			local mouseDelta = UserInputService:GetMouseDelta()
-			local sensitivity = 0.003 * CONFIG.CameraSensitivity
+			local sensitivity = 0.003 * CameraSensitivity
 			
 			SpectateYaw = SpectateYaw - mouseDelta.X * sensitivity
 			SpectatePitch = math.clamp(SpectatePitch - mouseDelta.Y * sensitivity, -math.rad(89), math.rad(89))
 		end
 		
+		-- Tạo rotation từ pitch và yaw
 		local rotation = CFrame.Angles(0, SpectateYaw, 0) * CFrame.Angles(SpectatePitch, 0, 0)
 		
+		-- Xử lý di chuyển camera
 		local moveInput = GetSpectateInput()
 		if moveInput.Magnitude > 0 then
 			local moveVector = rotation:VectorToWorldSpace(moveInput.Unit)
-			SpectateCameraPosition = SpectateCameraPosition + moveVector * CONFIG.SpectateSpeed * deltaTime
+			SpectateCameraPosition = SpectateCameraPosition + moveVector * SpectateSpeed * deltaTime
 		end
 		
+		-- Cập nhật camera
 		Camera.CFrame = CFrame.new(SpectateCameraPosition) * rotation
 		
+		-- Đảm bảo camera vẫn ở chế độ Scriptable
 		if Camera.CameraType ~= Enum.CameraType.Scriptable then
 			Camera.CameraType = Enum.CameraType.Scriptable
 		end
 		
+		-- Đảm bảo nhân vật vẫn freeze
 		local character = LocalPlayer.Character
 		if character then
 			local humanoid = character:FindFirstChild("Humanoid")
@@ -328,7 +343,7 @@ local function StartSpectate()
 end
 
 local function StopSpectate()
-	CONFIG.SpectateEnabled = false
+	SpectateEnabled = false
 	
 	if SpectateConnection then
 		SpectateConnection:Disconnect()
@@ -365,13 +380,13 @@ end
 --=============================================================================
 
 local function StartUnlockCamera()
-	CONFIG.UnlockCameraEnabled = true
+	UnlockCameraEnabled = true
 	
 	LocalPlayer.CameraMode = Enum.CameraMode.Classic
 	LocalPlayer.DevComputerCameraMode = Enum.DevComputerCameraMovementMode.Classic
 	LocalPlayer.DevTouchCameraMode = Enum.DevTouchCameraMovementMode.Classic
 	LocalPlayer.CameraMinZoomDistance = 0.5
-	LocalPlayer.CameraMaxZoomDistance = CONFIG.MaxZoomDistance
+	LocalPlayer.CameraMaxZoomDistance = CurrentMaxZoom
 	Camera.CameraType = Enum.CameraType.Custom
 	
 	if UnlockCameraConnection then
@@ -379,7 +394,7 @@ local function StartUnlockCamera()
 	end
 	
 	UnlockCameraConnection = RunService.RenderStepped:Connect(function()
-		if CONFIG.SpectateEnabled then return end
+		if SpectateEnabled then return end
 		
 		if LocalPlayer.CameraMode ~= Enum.CameraMode.Classic then
 			LocalPlayer.CameraMode = Enum.CameraMode.Classic
@@ -387,8 +402,8 @@ local function StartUnlockCamera()
 		if LocalPlayer.CameraMinZoomDistance > 0.5 then
 			LocalPlayer.CameraMinZoomDistance = 0.5
 		end
-		if LocalPlayer.CameraMaxZoomDistance ~= CONFIG.MaxZoomDistance then
-			LocalPlayer.CameraMaxZoomDistance = CONFIG.MaxZoomDistance
+		if LocalPlayer.CameraMaxZoomDistance ~= CurrentMaxZoom then
+			LocalPlayer.CameraMaxZoomDistance = CurrentMaxZoom
 		end
 		if Camera.CameraType == Enum.CameraType.Scriptable or Camera.CameraType == Enum.CameraType.Fixed then
 			Camera.CameraType = Enum.CameraType.Custom
@@ -397,7 +412,7 @@ local function StartUnlockCamera()
 end
 
 local function StopUnlockCamera()
-	CONFIG.UnlockCameraEnabled = false
+	UnlockCameraEnabled = false
 	
 	if UnlockCameraConnection then
 		UnlockCameraConnection:Disconnect()
@@ -415,7 +430,7 @@ end
 --=============================================================================
 
 local function StartShiftLock()
-	CONFIG.ShiftLockEnabled = true
+	ShiftLockEnabled = true
 	
 	LocalPlayer.DevEnableMouseLock = true
 	
@@ -433,7 +448,7 @@ local function StartShiftLock()
 	end
 	
 	ShiftLockConnection = RunService.RenderStepped:Connect(function()
-		if CONFIG.SpectateEnabled then return end
+		if SpectateEnabled then return end
 		
 		local char = LocalPlayer.Character
 		if not char then return end
@@ -453,21 +468,21 @@ local function StartShiftLock()
 			hum.CameraOffset = Vector3.new(1.75, 0, 0)
 		end
 		
-		if CONFIG.ShiftLockEnabled and not CONFIG.SpectateEnabled then
+		if ShiftLockEnabled and not SpectateEnabled then
 			UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
 		end
 	end)
 end
 
 local function StopShiftLock()
-	CONFIG.ShiftLockEnabled = false
+	ShiftLockEnabled = false
 	
 	if ShiftLockConnection then
 		ShiftLockConnection:Disconnect()
 		ShiftLockConnection = nil
 	end
 	
-	if not CONFIG.SpectateEnabled then
+	if not SpectateEnabled then
 		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 	end
 	
@@ -476,7 +491,7 @@ local function StopShiftLock()
 	
 	if humanoid then
 		humanoid.AutoRotate = true
-		humanoid.CameraOffset = Vector3.new(CONFIG.CameraOffsetX, CONFIG.CameraOffsetY, CONFIG.CameraOffsetZ)
+		humanoid.CameraOffset = Vector3.new(0, 0, 0)
 	end
 end
 
@@ -485,17 +500,24 @@ end
 --=============================================================================
 
 LocalPlayer.CharacterAdded:Connect(function(character)
-	if CONFIG.SpectateEnabled then
-		StopSpectate()
+	if SpectateEnabled then
+		SpectateEnabled = false
+		if SpectateConnection then
+			SpectateConnection:Disconnect()
+			SpectateConnection = nil
+		end
+		OriginalAnchored = {}
+		Camera.CameraType = Enum.CameraType.Custom
+		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 	end
 	
 	local humanoid = character:WaitForChild("Humanoid", 5)
 	if humanoid then
-		if CONFIG.ShiftLockEnabled then
+		if ShiftLockEnabled then
 			humanoid.AutoRotate = false
 			humanoid.CameraOffset = Vector3.new(1.75, 0, 0)
 		else
-			humanoid.CameraOffset = Vector3.new(CONFIG.CameraOffsetX, CONFIG.CameraOffsetY, CONFIG.CameraOffsetZ)
+			humanoid.CameraOffset = Vector3.new(CameraOffsetX, CameraOffsetY, CameraOffsetZ)
 		end
 	end
 end)
@@ -505,15 +527,15 @@ end)
 --=============================================================================
 
 RunService.RenderStepped:Connect(function()
-	if CONFIG.SpectateEnabled then return end
+	if SpectateEnabled then return end
 	
-	if not CONFIG.SmoothCamera then 
+	if not SmoothCameraEnabled then 
 		lastCFrame = Camera.CFrame
 		return 
 	end
 	
 	local targetCFrame = Camera.CFrame
-	Camera.CFrame = lastCFrame:Lerp(targetCFrame, smoothSpeed * CONFIG.CameraSensitivity)
+	Camera.CFrame = lastCFrame:Lerp(targetCFrame, smoothSpeed * CameraSensitivity)
 	lastCFrame = Camera.CFrame
 end)
 
@@ -536,37 +558,45 @@ function CameraAPI:GetConfig()
 end
 
 function CameraAPI:EnableSpectate()
+	CONFIG.SpectateEnabled = true
 	StartSpectate()
 end
 
 function CameraAPI:DisableSpectate()
+	CONFIG.SpectateEnabled = false
 	StopSpectate()
 end
 
 function CameraAPI:SetSpectateSpeed(speed)
 	CONFIG.SpectateSpeed = speed
+	SpectateSpeed = speed
 end
 
 function CameraAPI:EnableUnlockCamera()
+	CONFIG.UnlockCameraEnabled = true
 	StartUnlockCamera()
 end
 
 function CameraAPI:DisableUnlockCamera()
+	CONFIG.UnlockCameraEnabled = false
 	StopUnlockCamera()
 end
 
 function CameraAPI:SetMaxZoomDistance(distance)
 	CONFIG.MaxZoomDistance = distance
-	if CONFIG.UnlockCameraEnabled then
+	CurrentMaxZoom = distance
+	if UnlockCameraEnabled then
 		LocalPlayer.CameraMaxZoomDistance = distance
 	end
 end
 
 function CameraAPI:EnableShiftLock()
+	CONFIG.ShiftLockEnabled = true
 	StartShiftLock()
 end
 
 function CameraAPI:DisableShiftLock()
+	CONFIG.ShiftLockEnabled = false
 	StopShiftLock()
 end
 
@@ -588,7 +618,7 @@ end
 function CameraAPI:SetCameraType(cameraType)
 	CONFIG.CameraType = cameraType
 	
-	if CONFIG.SpectateEnabled then return end
+	if SpectateEnabled then return end
 	
 	local cameraTypeMap = {
 		["Custom"] = Enum.CameraType.Custom,
@@ -614,41 +644,47 @@ end
 
 function CameraAPI:EnableSmoothCamera()
 	CONFIG.SmoothCamera = true
+	SmoothCameraEnabled = true
 end
 
 function CameraAPI:DisableSmoothCamera()
 	CONFIG.SmoothCamera = false
+	SmoothCameraEnabled = false
 end
 
 function CameraAPI:SetCameraSensitivity(sensitivity)
 	CONFIG.CameraSensitivity = sensitivity
+	CameraSensitivity = sensitivity
 	UserInputService.MouseDeltaSensitivity = sensitivity
 end
 
 function CameraAPI:SetCameraOffsetX(offset)
 	CONFIG.CameraOffsetX = offset
+	CameraOffsetX = offset
 	local character = LocalPlayer.Character
 	local humanoid = character and character:FindFirstChild("Humanoid")
-	if humanoid and not CONFIG.ShiftLockEnabled then
-		humanoid.CameraOffset = Vector3.new(offset, CONFIG.CameraOffsetY, CONFIG.CameraOffsetZ)
+	if humanoid and not ShiftLockEnabled then
+		humanoid.CameraOffset = Vector3.new(offset, CameraOffsetY, CameraOffsetZ)
 	end
 end
 
 function CameraAPI:SetCameraOffsetY(offset)
 	CONFIG.CameraOffsetY = offset
+	CameraOffsetY = offset
 	local character = LocalPlayer.Character
 	local humanoid = character and character:FindFirstChild("Humanoid")
-	if humanoid and not CONFIG.ShiftLockEnabled then
-		humanoid.CameraOffset = Vector3.new(CONFIG.CameraOffsetX, offset, CONFIG.CameraOffsetZ)
+	if humanoid and not ShiftLockEnabled then
+		humanoid.CameraOffset = Vector3.new(CameraOffsetX, offset, CameraOffsetZ)
 	end
 end
 
 function CameraAPI:SetCameraOffsetZ(offset)
 	CONFIG.CameraOffsetZ = offset
+	CameraOffsetZ = offset
 	local character = LocalPlayer.Character
 	local humanoid = character and character:FindFirstChild("Humanoid")
-	if humanoid and not CONFIG.ShiftLockEnabled then
-		humanoid.CameraOffset = Vector3.new(CONFIG.CameraOffsetX, CONFIG.CameraOffsetY, offset)
+	if humanoid and not ShiftLockEnabled then
+		humanoid.CameraOffset = Vector3.new(CameraOffsetX, CameraOffsetY, offset)
 	end
 end
 
@@ -657,9 +693,13 @@ function CameraAPI:SetCameraOffset(x, y, z)
 	CONFIG.CameraOffsetY = y
 	CONFIG.CameraOffsetZ = z
 	
+	CameraOffsetX = x
+	CameraOffsetY = y
+	CameraOffsetZ = z
+	
 	local character = LocalPlayer.Character
 	local humanoid = character and character:FindFirstChild("Humanoid")
-	if humanoid and not CONFIG.ShiftLockEnabled then
+	if humanoid and not ShiftLockEnabled then
 		humanoid.CameraOffset = Vector3.new(x, y, z)
 	end
 end
