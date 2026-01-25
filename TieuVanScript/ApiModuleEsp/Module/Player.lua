@@ -22,6 +22,14 @@ local CONFIG = {
 	Noclip = false,
 }
 
+local FLY_ANIMATIONS = {
+	Idle = "rbxassetid://83499817314808",
+	Move = "rbxassetid://132105268936736",
+	Backward = "rbxassetid://74891040412078",
+	Left = "rbxassetid://105182810808552",
+	Right = "rbxassetid://86441014589019"
+}
+
 --=============================================================================
 -- STATE
 --=============================================================================
@@ -34,6 +42,17 @@ local jumpConnection
 local autoJumpConnection
 local noclipConnection
 
+local flyIdleAnim
+local flyMoveAnim
+local flyBackwardAnim
+local flyLeftAnim
+local flyRightAnim
+local flyIdleTrack
+local flyMoveTrack
+local flyBackwardTrack
+local flyLeftTrack
+local flyRightTrack
+
 --=============================================================================
 -- UTILITY FUNCTIONS
 --=============================================================================
@@ -44,6 +63,148 @@ local function GetCharacterParts()
 	local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
 	return character, humanoidRootPart, humanoid
+end
+
+local function StopFlyAnimations()
+	if flyIdleTrack then
+		flyIdleTrack:Stop()
+		flyIdleTrack = nil
+	end
+	if flyMoveTrack then
+		flyMoveTrack:Stop()
+		flyMoveTrack = nil
+	end
+	if flyBackwardTrack then
+		flyBackwardTrack:Stop()
+		flyBackwardTrack = nil
+	end
+	if flyLeftTrack then
+		flyLeftTrack:Stop()
+		flyLeftTrack = nil
+	end
+	if flyRightTrack then
+		flyRightTrack:Stop()
+		flyRightTrack = nil
+	end
+	if flyIdleAnim then
+		flyIdleAnim:Destroy()
+		flyIdleAnim = nil
+	end
+	if flyMoveAnim then
+		flyMoveAnim:Destroy()
+		flyMoveAnim = nil
+	end
+	if flyBackwardAnim then
+		flyBackwardAnim:Destroy()
+		flyBackwardAnim = nil
+	end
+	if flyLeftAnim then
+		flyLeftAnim:Destroy()
+		flyLeftAnim = nil
+	end
+	if flyRightAnim then
+		flyRightAnim:Destroy()
+		flyRightAnim = nil
+	end
+end
+
+local function SetupFlyAnimations()
+	local character, _, humanoid = GetCharacterParts()
+	if not character or not humanoid then return end
+	
+	local animator = humanoid:FindFirstChildOfClass("Animator")
+	if not animator then
+		animator = Instance.new("Animator")
+		animator.Parent = humanoid
+	end
+	
+	flyIdleAnim = Instance.new("Animation")
+	flyIdleAnim.AnimationId = FLY_ANIMATIONS.Idle
+	
+	flyMoveAnim = Instance.new("Animation")
+	flyMoveAnim.AnimationId = FLY_ANIMATIONS.Move
+	
+	flyBackwardAnim = Instance.new("Animation")
+	flyBackwardAnim.AnimationId = FLY_ANIMATIONS.Backward
+	
+	flyLeftAnim = Instance.new("Animation")
+	flyLeftAnim.AnimationId = FLY_ANIMATIONS.Left
+	
+	flyRightAnim = Instance.new("Animation")
+	flyRightAnim.AnimationId = FLY_ANIMATIONS.Right
+	
+	pcall(function()
+		flyIdleTrack = animator:LoadAnimation(flyIdleAnim)
+		flyIdleTrack.Priority = Enum.AnimationPriority.Action4
+		flyIdleTrack.Looped = true
+		
+		flyMoveTrack = animator:LoadAnimation(flyMoveAnim)
+		flyMoveTrack.Priority = Enum.AnimationPriority.Action4
+		flyMoveTrack.Looped = true
+		
+		flyBackwardTrack = animator:LoadAnimation(flyBackwardAnim)
+		flyBackwardTrack.Priority = Enum.AnimationPriority.Action4
+		flyBackwardTrack.Looped = true
+		
+		flyLeftTrack = animator:LoadAnimation(flyLeftAnim)
+		flyLeftTrack.Priority = Enum.AnimationPriority.Action4
+		flyLeftTrack.Looped = true
+		
+		flyRightTrack = animator:LoadAnimation(flyRightAnim)
+		flyRightTrack.Priority = Enum.AnimationPriority.Action4
+		flyRightTrack.Looped = true
+	end)
+end
+
+local function StopAllFlyAnimationsExcept(exceptTrack)
+	if flyIdleTrack and flyIdleTrack ~= exceptTrack and flyIdleTrack.IsPlaying then
+		flyIdleTrack:Stop(0.2)
+	end
+	if flyMoveTrack and flyMoveTrack ~= exceptTrack and flyMoveTrack.IsPlaying then
+		flyMoveTrack:Stop(0.2)
+	end
+	if flyBackwardTrack and flyBackwardTrack ~= exceptTrack and flyBackwardTrack.IsPlaying then
+		flyBackwardTrack:Stop(0.2)
+	end
+	if flyLeftTrack and flyLeftTrack ~= exceptTrack and flyLeftTrack.IsPlaying then
+		flyLeftTrack:Stop(0.2)
+	end
+	if flyRightTrack and flyRightTrack ~= exceptTrack and flyRightTrack.IsPlaying then
+		flyRightTrack:Stop(0.2)
+	end
+end
+
+local function UpdateFlyAnimation(isMoving, isMovingBackward, isMovingLeft, isMovingRight)
+	if not CONFIG.Fly then return end
+	
+	if isMoving then
+		if isMovingRight then
+			StopAllFlyAnimationsExcept(flyRightTrack)
+			if flyRightTrack and not flyRightTrack.IsPlaying then
+				flyRightTrack:Play(0.2)
+			end
+		elseif isMovingLeft then
+			StopAllFlyAnimationsExcept(flyLeftTrack)
+			if flyLeftTrack and not flyLeftTrack.IsPlaying then
+				flyLeftTrack:Play(0.2)
+			end
+		elseif isMovingBackward then
+			StopAllFlyAnimationsExcept(flyBackwardTrack)
+			if flyBackwardTrack and not flyBackwardTrack.IsPlaying then
+				flyBackwardTrack:Play(0.2)
+			end
+		else
+			StopAllFlyAnimationsExcept(flyMoveTrack)
+			if flyMoveTrack and not flyMoveTrack.IsPlaying then
+				flyMoveTrack:Play(0.2)
+			end
+		end
+	else
+		StopAllFlyAnimationsExcept(flyIdleTrack)
+		if flyIdleTrack and not flyIdleTrack.IsPlaying then
+			flyIdleTrack:Play(0.2)
+		end
+	end
 end
 
 local function CleanupFlyInstances()
@@ -59,6 +220,7 @@ local function CleanupFlyInstances()
 		flyConnection:Disconnect()
 		flyConnection = nil
 	end
+	StopFlyAnimations()
 end
 
 --=============================================================================
@@ -93,6 +255,11 @@ local function StartFly()
 	
 	humanoid.PlatformStand = true
 	
+	SetupFlyAnimations()
+	if flyIdleTrack then
+		flyIdleTrack:Play(0.2)
+	end
+	
 	flyConnection = RunService.RenderStepped:Connect(function()
 		local char, hrp, hum = GetCharacterParts()
 		
@@ -114,20 +281,37 @@ local function StartFly()
 		local cameraCF = workspace.CurrentCamera.CFrame
 		local moveVector = hum.MoveDirection
 		local lookVector = cameraCF.LookVector
+		local rightVector = cameraCF.RightVector
 		
 		local velocity = Vector3.new(0, 0, 0)
+		local isMoving = moveVector.Magnitude > 0
+		local isMovingBackward = false
+		local isMovingLeft = false
+		local isMovingRight = false
 		
-		if moveVector.Magnitude > 0 then
+		if isMoving then
+			local flatMoveVector = Vector3.new(moveVector.X, 0, moveVector.Z).Unit
+			local flatLookVector = Vector3.new(lookVector.X, 0, lookVector.Z).Unit
+			local flatRightVector = Vector3.new(rightVector.X, 0, rightVector.Z).Unit
+			
+			local forwardDot = flatMoveVector:Dot(flatLookVector)
+			local rightDot = flatMoveVector:Dot(flatRightVector)
+			
+			isMovingRight = rightDot > 0.5
+			isMovingLeft = rightDot < -0.5
+			isMovingBackward = forwardDot < -0.5 and not isMovingLeft and not isMovingRight
+			
 			CONFIG.FlySpeed = math.min(CONFIG.FlySpeed + CONFIG.Acceleration, CONFIG.MaxFlySpeed)
 			
-			local dotProduct = moveVector:Dot(lookVector)
-			local verticalComponent = lookVector.Y * CONFIG.FlySpeed * (dotProduct > 0 and 1 or -1)
+			local verticalDot = moveVector:Dot(lookVector)
+			local verticalComponent = lookVector.Y * CONFIG.FlySpeed * (verticalDot > 0 and 1 or -1)
 			velocity = moveVector * CONFIG.FlySpeed
 			velocity = velocity + Vector3.new(0, verticalComponent, 0)
 		else
 			CONFIG.FlySpeed = 5
 		end
 		
+		UpdateFlyAnimation(isMoving, isMovingBackward, isMovingLeft, isMovingRight)
 		bodyVelocity.Velocity = velocity
 	end)
 end
@@ -365,9 +549,9 @@ end
 -- PUBLIC API
 --=============================================================================
 
-local PlayerAPI = {}
+local Player2API = {}
 
-function PlayerAPI:UpdateConfig(newConfig)
+function Player2API:UpdateConfig(newConfig)
 	for key, value in pairs(newConfig) do
 		if CONFIG[key] ~= nil then
 			CONFIG[key] = value
@@ -375,79 +559,85 @@ function PlayerAPI:UpdateConfig(newConfig)
 	end
 end
 
-function PlayerAPI:GetConfig()
+function Player2API:GetConfig()
 	return CONFIG
 end
 
-function PlayerAPI:EnableFly()
+function Player2API:EnableFly()
 	StartFly()
 end
 
-function PlayerAPI:DisableFly()
+function Player2API:DisableFly()
 	StopFly()
 end
 
-function PlayerAPI:SetFlySpeed(speed)
+function Player2API:SetFlySpeed(speed)
 	CONFIG.FlySpeed = speed
 end
 
-function PlayerAPI:SetMaxFlySpeed(speed)
+function Player2API:SetMaxFlySpeed(speed)
 	CONFIG.MaxFlySpeed = speed
 end
 
-function PlayerAPI:SetAcceleration(accel)
+function Player2API:SetAcceleration(accel)
 	CONFIG.Acceleration = accel
 end
 
-function PlayerAPI:EnableSpeed()
+function Player2API:SetFlyAnimation(animType, animId)
+	if FLY_ANIMATIONS[animType] then
+		FLY_ANIMATIONS[animType] = animId
+	end
+end
+
+function Player2API:EnableSpeed()
 	StartSpeed()
 end
 
-function PlayerAPI:DisableSpeed()
+function Player2API:DisableSpeed()
 	StopSpeed()
 end
 
-function PlayerAPI:SetSpeedValue(value)
+function Player2API:SetSpeedValue(value)
 	CONFIG.SpeedValue = value
 end
 
-function PlayerAPI:EnableJump()
+function Player2API:EnableJump()
 	StartJump()
 end
 
-function PlayerAPI:DisableJump()
+function Player2API:DisableJump()
 	StopJump()
 end
 
-function PlayerAPI:SetJumpPower(power)
+function Player2API:SetJumpPower(power)
 	CONFIG.JumpPower = power
 end
 
-function PlayerAPI:EnableInfiniteJump()
+function Player2API:EnableInfiniteJump()
 	StartInfiniteJump()
 end
 
-function PlayerAPI:DisableInfiniteJump()
+function Player2API:DisableInfiniteJump()
 	StopInfiniteJump()
 end
 
-function PlayerAPI:EnableAutoJump()
+function Player2API:EnableAutoJump()
 	StartAutoJump()
 end
 
-function PlayerAPI:DisableAutoJump()
+function Player2API:DisableAutoJump()
 	StopAutoJump()
 end
 
-function PlayerAPI:EnableNoclip()
+function Player2API:EnableNoclip()
 	StartNoclip()
 end
 
-function PlayerAPI:DisableNoclip()
+function Player2API:DisableNoclip()
 	StopNoclip()
 end
 
-function PlayerAPI:ResetCharacter()
+function Player2API:ResetCharacter()
 	local character = player.Character
 	if character then
 		local humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -457,7 +647,7 @@ function PlayerAPI:ResetCharacter()
 	end
 end
 
-function PlayerAPI:DisableAll()
+function Player2API:DisableAll()
 	StopFly()
 	StopSpeed()
 	StopJump()
@@ -466,8 +656,8 @@ function PlayerAPI:DisableAll()
 	StopNoclip()
 end
 
-function PlayerAPI:Install()
+function Player2API:Install()
 	InstallAntiSpeedCheck()
 end
 
-return PlayerAPI
+return Player2API
