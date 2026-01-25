@@ -1,4 +1,4 @@
-return function(PlayerPage, PlayerAPI)
+return function(PlayerPage, Player2API)
 	local CharacterSection = PlayerPage:Section({
 		Name = "Character",
 		Description = "Feature",
@@ -16,9 +16,9 @@ return function(PlayerPage, PlayerAPI)
 		Default = false,
 		Callback = function(Value)
 			if Value then
-				PlayerAPI:EnableFly()
+				Player2API:EnableFly()
 			else
-				PlayerAPI:DisableFly()
+				Player2API:DisableFly()
 			end
 		end
 	})
@@ -32,7 +32,7 @@ return function(PlayerPage, PlayerAPI)
 		Decimals = 1,
 		Suffix = "m/s",
 		Callback = function(Value)
-			PlayerAPI:SetFlySpeed(Value)
+			Player2API:SetFlySpeed(Value)
 		end
 	})
 
@@ -45,7 +45,7 @@ return function(PlayerPage, PlayerAPI)
 		Decimals = 1,
 		Suffix = "m/s",
 		Callback = function(Value)
-			PlayerAPI:SetMaxFlySpeed(Value)
+			Player2API:SetMaxFlySpeed(Value)
 		end
 	})
 
@@ -58,7 +58,7 @@ return function(PlayerPage, PlayerAPI)
 		Decimals = 1,
 		Suffix = "x",
 		Callback = function(Value)
-			PlayerAPI:SetAcceleration(Value)
+			Player2API:SetAcceleration(Value)
 		end
 	})
 
@@ -72,9 +72,9 @@ return function(PlayerPage, PlayerAPI)
 		Default = false,
 		Callback = function(Value)
 			if Value then
-				PlayerAPI:EnableSpeed()
+				Player2API:EnableSpeed()
 			else
-				PlayerAPI:DisableSpeed()
+				Player2API:DisableSpeed()
 			end
 		end
 	})
@@ -88,7 +88,7 @@ return function(PlayerPage, PlayerAPI)
 		Decimals = 1,
 		Suffix = "m/s",
 		Callback = function(Value)
-			PlayerAPI:SetSpeedValue(Value)
+			Player2API:SetSpeedValue(Value)
 		end
 	})
 
@@ -102,7 +102,7 @@ return function(PlayerPage, PlayerAPI)
 			local numValue = tonumber(Value)
 			if numValue then
 				numValue = math.clamp(numValue, 1, 100000)
-				PlayerAPI:SetSpeedValue(numValue)
+				Player2API:SetSpeedValue(numValue)
 			end
 		end
 	})
@@ -117,9 +117,9 @@ return function(PlayerPage, PlayerAPI)
 		Default = false,
 		Callback = function(Value)
 			if Value then
-				PlayerAPI:EnableJump()
+				Player2API:EnableJump()
 			else
-				PlayerAPI:DisableJump()
+				Player2API:DisableJump()
 			end
 		end
 	})
@@ -133,7 +133,7 @@ return function(PlayerPage, PlayerAPI)
 		Decimals = 1,
 		Suffix = "studs",
 		Callback = function(Value)
-			PlayerAPI:SetJumpPower(Value)
+			Player2API:SetJumpPower(Value)
 		end
 	})
 
@@ -147,7 +147,7 @@ return function(PlayerPage, PlayerAPI)
 			local numValue = tonumber(Value)
 			if numValue then
 				numValue = math.clamp(numValue, 1, 100000)
-				PlayerAPI:SetJumpPower(numValue)
+				Player2API:SetJumpPower(numValue)
 			end
 		end
 	})
@@ -158,9 +158,9 @@ return function(PlayerPage, PlayerAPI)
 		Default = false,
 		Callback = function(Value)
 			if Value then
-				PlayerAPI:EnableInfiniteJump()
+				Player2API:EnableInfiniteJump()
 			else
-				PlayerAPI:DisableInfiniteJump()
+				Player2API:DisableInfiniteJump()
 			end
 		end
 	})
@@ -171,9 +171,9 @@ return function(PlayerPage, PlayerAPI)
 		Default = false,
 		Callback = function(Value)
 			if Value then
-				PlayerAPI:EnableAutoJump()
+				Player2API:EnableAutoJump()
 			else
-				PlayerAPI:DisableAutoJump()
+				Player2API:DisableAutoJump()
 			end
 		end
 	})
@@ -188,9 +188,9 @@ return function(PlayerPage, PlayerAPI)
 		Default = false,
 		Callback = function(Value)
 			if Value then
-				PlayerAPI:EnableNoclip()
+				Player2API:EnableNoclip()
 			else
-				PlayerAPI:DisableNoclip()
+				Player2API:DisableNoclip()
 			end
 		end
 	})
@@ -202,14 +202,14 @@ return function(PlayerPage, PlayerAPI)
 	CharacterSection:Button({
 		Name = "Reset Character",
 		Callback = function()
-			PlayerAPI:ResetCharacter()
+			Player2API:ResetCharacter()
 		end
 	})
 
 	CharacterSection:Button({
 		Name = "Disable All",
 		Callback = function()
-			PlayerAPI:DisableAll()
+			Player2API:DisableAll()
 		end
 	})
 end
