@@ -95,9 +95,13 @@ local function FreezeCharacter(freeze)
 	end
 end
 
+local MobileThumbstickLeft = Vector2.new(0, 0)
+local MobileThumbstickRight = Vector2.new(0, 0)
+
 local function GetSpectateInput()
 	local moveDirection = Vector3.new(0, 0, 0)
 	
+	-- PC Keyboard Input
 	if UserInputService:IsKeyDown(Enum.KeyCode.W) then
 		moveDirection = moveDirection + Vector3.new(0, 0, -1)
 	end
@@ -115,6 +119,11 @@ local function GetSpectateInput()
 	end
 	if UserInputService:IsKeyDown(Enum.KeyCode.Q) then
 		moveDirection = moveDirection + Vector3.new(0, -1, 0)
+	end
+	
+	-- Mobile Thumbstick Input (Left thumbstick for movement)
+	if MobileThumbstickLeft.Magnitude > 0.1 then
+		moveDirection = moveDirection + Vector3.new(MobileThumbstickLeft.X, 0, -MobileThumbstickLeft.Y)
 	end
 	
 	if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
@@ -173,44 +182,74 @@ local function HandleJumpAction(actionName, inputState, inputObject)
 	return Enum.ContextActionResult.Sink
 end
 
-local function HandleTouchInput()
-	local touchConnection
-	local touchEndConnection
-	local touchBeginConnection
+local function HandleMobileThumbstickInput()
+	local guiConnection
 	
-	touchConnection = UserInputService.TouchMoved:Connect(function(touch, gameProcessed)
+	-- Detect GuiInset để tính toán vị trí thumbstick
+	local GuiInset = game:GetService("GuiService"):GetGuiInset()
+	
+	guiConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+		if not CONFIG.SpectateEnabled then return end
+		if input.UserInputType ~= Enum.UserInputType.Touch then return end
+	end)
+	
+	-- Touch input cho camera rotation (Right side)
+	local touchRotateConnection = UserInputService.TouchMoved:Connect(function(touch, gameProcessed)
 		if not CONFIG.SpectateEnabled then return end
 		if gameProcessed then return end
 		
 		local screenSize = Camera.ViewportSize
-		if touch.Position.X < screenSize.X * 0.4 then return end
-		
-		if TouchStartPos then
-			local delta = touch.Position - TouchStartPos
-			TouchStartPos = touch.Position
+		-- Nếu touch trên phần phải (40% bên phải) = camera rotation
+		if touch.Position.X > screenSize.X * 0.6 then
+			if TouchStartPos then
+				local delta = touch.Position - TouchStartPos
+				TouchStartPos = touch.Position
+				
+				local sensitivity = 0.005 * CONFIG.CameraSensitivity
+				TouchCameraYaw = TouchCameraYaw - delta.X * sensitivity
+				TouchCameraPitch = math.clamp(TouchCameraPitch - delta.Y * sensitivity, -math.rad(89), math.rad(89))
+			end
+		else
+			-- Nếu touch trên phần trái (40% bên trái) = thumbstick movement
+			local centerX = screenSize.X * 0.15
+			local centerY = screenSize.Y * 0.85
+			local deadzone = 30
 			
-			local sensitivity = 0.005 * CONFIG.CameraSensitivity
-			TouchCameraYaw = TouchCameraYaw - delta.X * sensitivity
-			TouchCameraPitch = math.clamp(TouchCameraPitch - delta.Y * sensitivity, -math.rad(89), math.rad(89))
+			local deltaX = touch.Position.X - centerX
+			local deltaY = touch.Position.Y - centerY
+			local distance = math.sqrt(deltaX * deltaX + deltaY * deltaY)
+			
+			if distance > deadzone then
+				local magnitude = math.min(distance / 100, 1)
+				local angle = math.atan2(deltaY, deltaX)
+				
+				MobileThumbstickLeft = Vector2.new(
+					math.cos(angle) * magnitude,
+					math.sin(angle) * magnitude
+				)
+			else
+				MobileThumbstickLeft = Vector2.new(0, 0)
+			end
 		end
 	end)
 	
-	touchBeginConnection = UserInputService.TouchStarted:Connect(function(touch, gameProcessed)
+	local touchBeginConnection = UserInputService.TouchStarted:Connect(function(touch, gameProcessed)
 		if not CONFIG.SpectateEnabled then return end
 		if gameProcessed then return end
 		
 		local screenSize = Camera.ViewportSize
-		if touch.Position.X >= screenSize.X * 0.4 then
+		if touch.Position.X > screenSize.X * 0.6 then
 			TouchStartPos = touch.Position
 		end
 	end)
 	
-	touchEndConnection = UserInputService.TouchEnded:Connect(function(touch, gameProcessed)
+	local touchEndConnection = UserInputService.TouchEnded:Connect(function(touch, gameProcessed)
 		if not CONFIG.SpectateEnabled then return end
 		TouchStartPos = nil
+		MobileThumbstickLeft = Vector2.new(0, 0)
 	end)
 	
-	return {touchConnection, touchEndConnection, touchBeginConnection}
+	return {guiConnection, touchRotateConnection, touchBeginConnection, touchEndConnection}
 end
 
 --=============================================================================
@@ -236,7 +275,7 @@ local function StartSpectate()
 	)
 	
 	if UserInputService.TouchEnabled then
-		TouchConnections = HandleTouchInput()
+		TouchConnections = HandleMobileThumbstickInput()
 	end
 	
 	if SpectateConnection then
